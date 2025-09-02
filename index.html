@@ -7,31 +7,42 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Add this debug overlay right after <body> -->
-<div id="debug-overlay" style="position:fixed;top:0;right:0;background:red;color:white;padding:10px;z-index:9999;display:none;max-width:300px;font-size:12px;"></div>
+ 
+    <script>
+// Simple mobile button fix
+console.log('🧪 Simple mobile fix loading');
 
-<script>
-// Global error catcher for mobile debugging
-window.addEventListener('error', function(e) {
-    const debug = document.getElementById('debug-overlay');
-    if (debug) {
-        debug.style.display = 'block';
-        debug.innerHTML = 'JS ERROR: ' + e.message + '<br>Line: ' + e.lineno + '<br>File: ' + e.filename;
+window.addEventListener('load', function() {
+    console.log('🧪 Window loaded - fixing buttons');
+    
+    // Fix test button
+    var testBtn = document.querySelector('button[onclick="testFunction()"]');
+    if (testBtn) {
+        console.log('🧪 Found test button');
+        testBtn.onclick = function() {
+            console.log('🧪 Test button clicked via onclick');
+            testFunction();
+        };
     }
-    console.error('Global error:', e);
+    
+    // Fix login button  
+    var loginBtn = document.querySelector('button[onclick="attemptLogin()"]');
+    if (loginBtn) {
+        console.log('🧪 Found login button');
+        loginBtn.onclick = function() {
+            console.log('🧪 Login button clicked via onclick');
+            attemptLogin();
+        };
+    }
 });
 
-window.addEventListener('unhandledrejection', function(e) {
-    const debug = document.getElementById('debug-overlay');
-    if (debug) {
-        debug.style.display = 'block';
-        debug.innerHTML = 'PROMISE ERROR: ' + e.reason;
-    }
-    console.error('Promise rejection:', e);
-});
+// Global error catcher
+window.onerror = function(msg, file, line) {
+    console.log('🧪 ERROR: ' + msg + ' at line ' + line);
+    alert('ERROR: ' + msg);
+};
+</script>
 
-// Test if basic JS works
-console.log('🧪 Debug overlay loaded on mobile');
 </script>
     <div class="header">
     <div>
