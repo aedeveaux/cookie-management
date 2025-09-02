@@ -1,7 +1,7 @@
 console.log('JavaScript starting to load...');
 
 // ===== FEATURE FLAGS =====
-const FEATURES = {
+var FEATURES = {
     ADVANCED_BOOTH_MANAGEMENT: false,  // Complex booth roles, check-in/out, hours tracking
     
     BOOTH_SALES_TRACKING: false,       // Track sales during booths
@@ -11,7 +11,7 @@ const FEATURES = {
 };
 
 // ===== GLOBAL VARIABLES =====
-let cookieTypes = {
+var cookieTypes = {
     'TM': { name: 'Thin Mints', price: 6.00 },
     'ADV': { name: 'Adventurefuls', price: 6.00 },
     'LEM': { name: 'Lemonades', price: 6.00 },
@@ -22,22 +22,22 @@ let cookieTypes = {
     'PBS': { name: 'Peanut Butter Sandwiches', price: 6.00 }
 };
 
-let troopInventory = {};
-let reservedInventory = {};
-let girls = [];
-let orders = [];
-let transfers = [];
-let payments = [];
-let parentOrders = [];
-let personalSales = [];
-let currentUser = null;
-let booths = [];
-let boothSignups = [];
+var troopInventory = {};
+var reservedInventory = {};
+var girls = [];
+var orders = [];
+var transfers = [];
+var payments = [];
+var parentOrders = [];
+var personalSales = [];
+var currentUser = null;
+var booths = [];
+var boothSignups = [];
 
 
 
 // Demo user accounts
-let users = [
+var users = [
     {
         id: 1,
         email: 'mom@troop167.com',
