@@ -1,5 +1,76 @@
 console.log('JavaScript starting to load...');
 
+// Add right after the first console.log
+console.log('🧪 JavaScript file loading on mobile...');
+
+// Add debugging to gapiLoaded and gisLoaded
+window.gapiLoaded = function() {
+    console.log('🧪 GAPI loaded successfully');
+    gapi.load('client', function() {
+        console.log('🧪 GAPI client loaded');
+        initializeGapiClient();
+    });
+};
+
+window.gisLoaded = function() {
+    console.log('🧪 GIS loaded successfully');
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '',
+    });
+    console.log('🧪 TokenClient created');
+    gisInited = true;
+    maybeEnableButtons();
+};
+
+// Add debugging to maybeEnableButtons
+function maybeEnableButtons() {
+    console.log('🧪 maybeEnableButtons called - gapi:', gapiInited, 'gis:', gisInited);
+    
+    if (gapiInited && gisInited) {
+        const authButton = document.getElementById('authorize_button');
+        console.log('🧪 Auth button found:', !!authButton);
+        
+        if (authButton) {
+            authButton.disabled = false;
+            authButton.style.background = '#4285f4';
+            authButton.textContent = 'Connect Google Sheets';
+            console.log('🧪 Auth button enabled');
+            
+            if (!authButton.dataset.bound) {
+                authButton.addEventListener('click', function() {
+                    console.log('🧪 Auth button clicked on mobile');
+                    handleAuthClick();
+                });
+                authButton.dataset.bound = 'true';
+                console.log('🧪 Auth button click handler bound');
+            }
+        }
+    }
+}
+
+// Add debugging to testFunction
+function testFunction() {
+    console.log('🧪 Test function called on mobile');
+    const testResult = document.getElementById('testResult');
+    console.log('🧪 Test result element:', !!testResult);
+    
+    if (testResult) {
+        testResult.textContent = 'JavaScript is working on mobile! ✅';
+        testResult.style.color = 'green';
+        console.log('🧪 Test result updated');
+    }
+    
+    // Show debug overlay with success
+    const debug = document.getElementById('debug-overlay');
+    if (debug) {
+        debug.style.background = 'green';
+        debug.style.display = 'block';
+        debug.innerHTML = '✅ JavaScript working on mobile!';
+    }
+}
+
 // ===== FEATURE FLAGS =====
 var FEATURES = {
     ADVANCED_BOOTH_MANAGEMENT: false,  // Complex booth roles, check-in/out, hours tracking
@@ -65,10 +136,10 @@ Object.keys(cookieTypes).forEach(type => {
 });
 
 // ===== GOOGLE SHEETS INTEGRATION =====
-const CLIENT_ID = '985139482684-0p8oe3hoplarh12l4ghefmu9op6gjh2b.apps.googleusercontent.com';
-const SHEET_ID = '1bxBOqy4zY6hqy0-_DnparpkGshap6apDIuNcueiA4B4';
-const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+var CLIENT_ID = '985139482684-0p8oe3hoplarh12l4ghefmu9op6gjh2b.apps.googleusercontent.com';
+var SHEET_ID = '1bxBOqy4zY6hqy0-_DnparpkGshap6apDIuNcueiA4B4';
+var DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+var SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
 let tokenClient;
 let gapiInited = false;
@@ -651,7 +722,7 @@ function showMessage(containerId, message, isError = false) {
 
 function testFunction() {
     console.log('Test function called');
-    const testResult = document.getElementById('testResult');
+    var testResult = document.getElementById('testResult');
     if (testResult) {
         testResult.textContent = 'JavaScript is working!';
         testResult.style.color = 'green';

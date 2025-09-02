@@ -7,9 +7,35 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Add this debug overlay right after <body> -->
+<div id="debug-overlay" style="position:fixed;top:0;right:0;background:red;color:white;padding:10px;z-index:9999;display:none;max-width:300px;font-size:12px;"></div>
+
+<script>
+// Global error catcher for mobile debugging
+window.addEventListener('error', function(e) {
+    const debug = document.getElementById('debug-overlay');
+    if (debug) {
+        debug.style.display = 'block';
+        debug.innerHTML = 'JS ERROR: ' + e.message + '<br>Line: ' + e.lineno + '<br>File: ' + e.filename;
+    }
+    console.error('Global error:', e);
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+    const debug = document.getElementById('debug-overlay');
+    if (debug) {
+        debug.style.display = 'block';
+        debug.innerHTML = 'PROMISE ERROR: ' + e.reason;
+    }
+    console.error('Promise rejection:', e);
+});
+
+// Test if basic JS works
+console.log('🧪 Debug overlay loaded on mobile');
+</script>
     <div class="header">
     <div>
-        <h1>🍪 Troop 167 Cookie Management</h1>
+        <h1>Troop 167 Cookie Management</h1>
         <p>Girl Scout Cookie Season 2025</p>
     </div>
     
@@ -49,13 +75,13 @@
         <!-- Login Screen -->
         <div id="loginScreen">
             <div class="section" style="max-width: 400px; margin: 50px auto;">
-                <h2>🍪 Login to Cookie Management</h2>
+                <h2>Login to Cookie Management</h2>
                 
                 <!-- Google Sheets Connection -->
                 <div id="googleAuthSection" style="text-align: center; margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 5px;">
                     <p><strong>Connect to Google Sheets</strong></p>
                     <button id="authorize_button" class="btn" style="background: #6c757d;" disabled>
-                        🔗 Loading APIs...
+                        Loading APIs...
                     </button>
                     <p style="font-size: 0.9rem; margin-top: 10px; color: #666;">
                         Connect to load/save data from your Google Sheet
