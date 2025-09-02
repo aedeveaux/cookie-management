@@ -8,39 +8,74 @@
 </head>
 <body>
  
-    <script>
-// Simple mobile button fix
-console.log('🧪 Simple mobile fix loading');
+<script>
+console.log('🧪 Aggressive mobile fix loading');
 
 window.addEventListener('load', function() {
-    console.log('🧪 Window loaded - fixing buttons');
+    console.log('🧪 Window loaded - aggressive button fixing');
     
-    // Fix test button
-    var testBtn = document.querySelector('button[onclick="testFunction()"]');
-    if (testBtn) {
-        console.log('🧪 Found test button');
-        testBtn.onclick = function() {
-            console.log('🧪 Test button clicked via onclick');
-            testFunction();
-        };
+    // Fix ALL buttons with onclick attributes
+    var allButtons = document.querySelectorAll('button[onclick]');
+    console.log('🧪 Found ' + allButtons.length + ' buttons with onclick');
+    
+    for (var i = 0; i < allButtons.length; i++) {
+        var btn = allButtons[i];
+        var onclickAttr = btn.getAttribute('onclick');
+        console.log('🧪 Fixing button: ' + onclickAttr);
+        
+        // Remove onclick and create new function
+        btn.removeAttribute('onclick');
+        
+        // Create a closure to preserve the onclick value
+        (function(button, clickCode) {
+            // Add multiple event types for maximum compatibility
+            button.addEventListener('touchstart', function(e) {
+                console.log('🧪 Touch start: ' + clickCode);
+            });
+            
+            button.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🧪 Touch end: ' + clickCode);
+                
+                // Execute the original onclick code
+                try {
+                    eval(clickCode);
+                } catch (error) {
+                    console.log('🧪 Error executing: ' + error);
+                }
+            });
+            
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🧪 Click: ' + clickCode);
+                
+                try {
+                    eval(clickCode);
+                } catch (error) {
+                    console.log('🧪 Error executing: ' + error);
+                }
+            });
+            
+            // Also try direct onclick assignment
+            button.onclick = function(e) {
+                console.log('🧪 Direct onclick: ' + clickCode);
+                try {
+                    eval(clickCode);
+                } catch (error) {
+                    console.log('🧪 Error executing: ' + error);
+                }
+            };
+            
+        })(btn, onclickAttr);
     }
     
-    // Fix login button  
-    var loginBtn = document.querySelector('button[onclick="attemptLogin()"]');
-    if (loginBtn) {
-        console.log('🧪 Found login button');
-        loginBtn.onclick = function() {
-            console.log('🧪 Login button clicked via onclick');
-            attemptLogin();
-        };
-    }
+    console.log('🧪 All buttons fixed with multiple event handlers');
 });
 
-// Global error catcher
-window.onerror = function(msg, file, line) {
-    console.log('🧪 ERROR: ' + msg + ' at line ' + line);
-    alert('ERROR: ' + msg);
-};
+// Even more aggressive - add touch support to document
+document.addEventListener('touchstart', function() {}, { passive: true });
 </script>
 
 </script>
