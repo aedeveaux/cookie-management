@@ -1,6 +1,5 @@
 console.log('JavaScript starting to load...');
 
-
 // ===== FEATURE FLAGS =====
 var FEATURES = {
     ADVANCED_BOOTH_MANAGEMENT: false,  // Complex booth roles, check-in/out, hours tracking
@@ -3555,16 +3554,11 @@ function closeMobileMenu() {
 }
 
 function setupMobileNavigation(menuItems) {
-    console.log('setupMobileNavigation called with:', menuItems);
-    
     const mobileNavItems = document.getElementById('mobileNavItems');
-    if (!mobileNavItems) {
-        console.log('ERROR: mobileNavItems element not found!');
-        return;
-    }
-    
+    if (!mobileNavItems) return;
+
     mobileNavItems.innerHTML = '';
-    
+
     menuItems.forEach(item => {
         const li = document.createElement('li');
         li.className = 'mobile-nav-item';
@@ -3572,26 +3566,16 @@ function setupMobileNavigation(menuItems) {
         const link = document.createElement('a');
         link.className = 'mobile-nav-link';
         link.setAttribute('data-tab', item.id);
-        link.href = '#';
-        
-        // Handle icons properly - only add if icon exists
-        if (item.icon) {
-            link.innerHTML = `<span class="icon">${item.icon}</span>${item.label}`;
-        } else {
-            link.textContent = item.label;
-        }
-        
-        link.onclick = (e) => {
-            e.preventDefault();
+        link.onclick = () => {
             showTab(item.id);
             closeMobileMenu();
         };
         
+        link.innerHTML = `<span class="icon">${item.icon}</span>${item.label}`;
+        
         li.appendChild(link);
         mobileNavItems.appendChild(li);
     });
-    
-    console.log('Mobile nav setup complete');
 }
 
 // ===== INITIALIZATION =====
