@@ -604,3 +604,27 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Fix mobile menu scrolling */
+.mobile-nav {
+    overflow-y: auto; /* Enable vertical scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    max-height: 100vh; /* Don't exceed screen height */
+    box-sizing: border-box;
+}
+
+.mobile-nav-items {
+    padding-bottom: 80px; /* Add space at bottom for footer */
+    max-height: calc(100vh - 140px); /* Account for header + footer */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure footer doesn't block scrolling */
+.mobile-nav-footer {
+    position: sticky; /* Changed from absolute to sticky */
+    bottom: 0;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    z-index: 1;
+}
