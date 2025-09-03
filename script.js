@@ -770,14 +770,14 @@ function setupCookieMomInterface() {
    
 
     setupMobileNavigation([
-        { id: 'dashboard', icon: '[DASH]', label: 'Dashboard' },
-        { id: 'orders', icon: '[ORD]', label: 'Troop Orders' },
-        { id: 'girls', icon: '[GIRL]', label: 'Girl Management' },
-        { id: 'request-approval', icon: '[REQ]', label: 'Parent Requests' },
-        { id: 'transfers', icon: '[XFER]', label: 'Transfers' },
-        { id: 'money', icon: '[$$]', label: 'Money Collection' },
-        { id: 'booths', icon: '[BOOTH]', label: 'Booth Management' },
-    ]);
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'orders', label: 'Troop Orders' },
+    { id: 'girls', label: 'Girl Management' },
+    { id: 'request-approval', label: 'Parent Requests' },
+    { id: 'transfers', label: 'Transfers' },
+    { id: 'money', label: 'Money Collection' },
+    { id: 'booths', label: 'Booth Management' },
+]);
 }
 
 function setupParentInterface() {
@@ -810,10 +810,10 @@ function setupParentInterface() {
     }, 100);
 
     setupMobileNavigation([
-    { id: 'parent-orders', icon: 'ORD', label: 'My Orders' },
-    { id: 'my-balance', icon: 'BAL', label: 'My Balance' },
-    { id: 'my-sales', icon: 'SALES', label: 'My Sales' },
-    { id: 'parent-booths', icon: 'BOOTH', label: 'Booth Signups' },
+    { id: 'parent-orders', label: 'My Orders' },
+    { id: 'my-balance', label: 'My Balance' },
+    { id: 'my-sales', label: 'My Sales' },
+    { id: 'parent-booths', label: 'Booth Signups' },
 ]);
 }
 
@@ -3575,7 +3575,16 @@ function openMobileMenu() {
 function closeMobileMenu() {
     var overlay = document.getElementById('mobileNavOverlay');
     var mobileNav = document.getElementById('mobileNav');
-    var hamburger = document.get
+    var hamburger = document.getElementById('mobileMenuToggle');
+    
+    if (mobileNav) mobileNav.classList.remove('active');
+    if (hamburger) hamburger.classList.remove('active');
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.style.pointerEvents = 'none';
+    }
+    document.body.style.overflow = 'auto';
+    console.log('Mobile menu closed');
 }
 
 // ===== INITIALIZATION =====
