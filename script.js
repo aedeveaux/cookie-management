@@ -769,14 +769,14 @@ function setupCookieMomInterface() {
    
 
     setupMobileNavigation([
-    { id: 'dashboard', icon: '', label: 'Dashboard' },
-    { id: 'orders', icon: '', label: 'Troop Orders' },
-    { id: 'girls', icon: '', label: 'Girl Management' },
-    { id: 'request-approval', icon: '', label: 'Parent Requests' },
-    { id: 'transfers', icon: '', label: 'Transfers' },
-    { id: 'money', icon: '', label: 'Money Collection' },
-    { id: 'booths', icon: '', label: 'Booth Management' },
-]);
+        { id: 'dashboard', icon: '[DASH]', label: 'Dashboard' },
+        { id: 'orders', icon: '[ORD]', label: 'Troop Orders' },
+        { id: 'girls', icon: '[GIRL]', label: 'Girl Management' },
+        { id: 'request-approval', icon: '[REQ]', label: 'Parent Requests' },
+        { id: 'transfers', icon: '[XFER]', label: 'Transfers' },
+        { id: 'money', icon: '[$$]', label: 'Money Collection' },
+        { id: 'booths', icon: '[BOOTH]', label: 'Booth Management' },
+    ]);
 }
 
 function setupParentInterface() {
@@ -809,10 +809,10 @@ function setupParentInterface() {
     }, 100);
 
     setupMobileNavigation([
-    { id: 'parent-orders', icon: '', label: 'My Orders' },
-    { id: 'my-balance', icon: '', label: 'My Balance' },
-    { id: 'my-sales', icon: '', label: 'My Sales' },
-    { id: 'parent-booths', icon: '', label: 'Booth Signups' },
+    { id: 'parent-orders', icon: 'ORD', label: 'My Orders' },
+    { id: 'my-balance', icon: 'BAL', label: 'My Balance' },
+    { id: 'my-sales', icon: 'SALES', label: 'My Sales' },
+    { id: 'parent-booths', icon: 'BOOTH', label: 'Booth Signups' },
 ]);
 }
 
