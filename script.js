@@ -3572,7 +3572,7 @@ function setupMobileNavigation(menuItems) {
             closeMobileMenu();
         };
         
-        link.innerHTML = `<span class="icon">${item.icon}</span>${item.label}`;
+        link.textContent = item.label;
         
         li.appendChild(link);
         mobileNavItems.appendChild(li);
