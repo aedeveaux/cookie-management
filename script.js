@@ -770,14 +770,14 @@ function setupCookieMomInterface() {
    
 
     setupMobileNavigation([
-    { id: 'dashboard', label: 'Dashboard', onClick: function() { showTab('dashboard'); closeMobileMenu(); } },
-    { id: 'orders', label: 'Troop Orders', onClick: function() { showTab('orders'); closeMobileMenu(); } },
-    { id: 'girls', label: 'Girl Management', onClick: function() { showTab('girls'); closeMobileMenu(); } },
-    { id: 'request-approval', label: 'Parent Requests', onClick: function() { showTab('request-approval'); closeMobileMenu(); } },
-    { id: 'transfers', label: 'Transfers', onClick: function() { showTab('transfers'); closeMobileMenu(); } },
-    { id: 'money', label: 'Money Collection', onClick: function() { showTab('money'); closeMobileMenu(); } },
-    { id: 'booths', label: 'Booth Management', onClick: function() { showTab('booths'); closeMobileMenu(); } },
-]);
+        { id: 'dashboard', icon: '[DASH]', label: 'Dashboard' },
+        { id: 'orders', icon: '[ORD]', label: 'Troop Orders' },
+        { id: 'girls', icon: '[GIRL]', label: 'Girl Management' },
+        { id: 'request-approval', icon: '[REQ]', label: 'Parent Requests' },
+        { id: 'transfers', icon: '[XFER]', label: 'Transfers' },
+        { id: 'money', icon: '[$$]', label: 'Money Collection' },
+        { id: 'booths', icon: '[BOOTH]', label: 'Booth Management' },
+    ]);
 }
 
 function setupParentInterface() {
@@ -809,11 +809,11 @@ function setupParentInterface() {
         setupParentBoothSignups();
     }, 100);
 
-   setupMobileNavigation([
-    { id: 'parent-orders', label: 'My Orders', onClick: function() { showTab('parent-orders'); closeMobileMenu(); } },
-    { id: 'my-balance', label: 'My Balance', onClick: function() { showTab('my-balance'); closeMobileMenu(); } },
-    { id: 'my-sales', label: 'My Sales', onClick: function() { showTab('my-sales'); closeMobileMenu(); } },
-    { id: 'parent-booths', label: 'Booth Signups', onClick: function() { showTab('parent-booths'); closeMobileMenu(); } },
+    setupMobileNavigation([
+    { id: 'parent-orders', icon: 'ORD', label: 'My Orders' },
+    { id: 'my-balance', icon: 'BAL', label: 'My Balance' },
+    { id: 'my-sales', icon: 'SALES', label: 'My Sales' },
+    { id: 'parent-booths', icon: 'BOOTH', label: 'Booth Signups' },
 ]);
 }
 
@@ -3553,7 +3553,6 @@ function initializeMobileMenu() {
     }
 }
 
-// Add this function to your script.js
 function setupMobileNavigation(menuItems) {
     var mobileNavItems = document.getElementById('mobileNavItems');
     if (!mobileNavItems) return;
