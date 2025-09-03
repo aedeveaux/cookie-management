@@ -3553,6 +3553,40 @@ function initializeMobileMenu() {
     }
 }
 
+// Add this function to your script.js
+function setupMobileNavigation(menuItems) {
+    var mobileNavItems = document.getElementById('mobileNavItems');
+    if (!mobileNavItems) return;
+
+    mobileNavItems.innerHTML = '';
+
+    menuItems.forEach(function(item) {
+        var li = document.createElement('li');
+        li.className = 'mobile-nav-item';
+        
+        var link = document.createElement('a');
+        link.className = 'mobile-nav-link';
+        link.href = '#';
+        
+        // Auto-close click handler
+        link.onclick = function(e) {
+            e.preventDefault();
+            console.log('🧪 Mobile nav clicked:', item.label);
+            
+            if (item.onClick) {
+                item.onClick(); // Use custom onClick if provided
+            } else {
+                showTab(item.id); // Default behavior
+                closeMobileMenu(); // Auto-close
+            }
+        };
+        
+        link.textContent = item.label;
+        li.appendChild(link);
+        mobileNavItems.appendChild(li);
+    });
+}
+
 function openMobileMenu() {
     var overlay = document.getElementById('mobileNavOverlay');
     var mobileNav = document.getElementById('mobileNav');
