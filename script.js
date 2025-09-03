@@ -1,6 +1,5 @@
 console.log('JavaScript starting to load...');
 
-
 // ===== FEATURE FLAGS =====
 var FEATURES = {
     ADVANCED_BOOTH_MANAGEMENT: false,  // Complex booth roles, check-in/out, hours tracking
@@ -770,14 +769,14 @@ function setupCookieMomInterface() {
    
 
     setupMobileNavigation([
-    { id: 'dashboard', icon: '●', label: 'Dashboard' },
-    { id: 'orders', icon: '●', label: 'Troop Orders' },
-    { id: 'girls', icon: '●', label: 'Girl Management' },
-    { id: 'request-approval', icon: '●', label: 'Parent Requests' },
-    { id: 'transfers', icon: '●', label: 'Transfers' },
-    { id: 'money', icon: '●', label: 'Money Collection' },
-    { id: 'booths', icon: '●', label: 'Booth Management' },
-]);
+        { id: 'dashboard', icon: '[DASH]', label: 'Dashboard' },
+        { id: 'orders', icon: '[ORD]', label: 'Troop Orders' },
+        { id: 'girls', icon: '[GIRL]', label: 'Girl Management' },
+        { id: 'request-approval', icon: '[REQ]', label: 'Parent Requests' },
+        { id: 'transfers', icon: '[XFER]', label: 'Transfers' },
+        { id: 'money', icon: '[$$]', label: 'Money Collection' },
+        { id: 'booths', icon: '[BOOTH]', label: 'Booth Management' },
+    ]);
 }
 
 function setupParentInterface() {
@@ -810,10 +809,10 @@ function setupParentInterface() {
     }, 100);
 
     setupMobileNavigation([
-    { id: 'parent-orders', icon: '●', label: 'My Orders' },
-    { id: 'my-balance', icon: '●', label: 'My Balance' },
-    { id: 'my-sales', icon: '●', label: 'My Sales' },
-    { id: 'parent-booths', icon: '●', label: 'Booth Signups' },
+    { id: 'parent-orders', icon: 'ORD', label: 'My Orders' },
+    { id: 'my-balance', icon: 'BAL', label: 'My Balance' },
+    { id: 'my-sales', icon: 'SALES', label: 'My Sales' },
+    { id: 'parent-booths', icon: 'BOOTH', label: 'Booth Signups' },
 ]);
 }
 
@@ -3503,88 +3502,80 @@ async function updateAllGirlsInSheets() {
     }
 }
 
-// ===== MOBILE MENU FUNCTIONALITY (FIXED) =====
-var mobileMenuOpen = false; // Changed to var
+// ===== MOBILE MENU FUNCTIONALITY =====
 
-// Our working mobile menu fix from HTML
-function initializeMobileMenu() {
-    console.log('🧪 Initializing fixed mobile menu');
+let mobileMenuOpen = false;
+
+// Initialize mobile menu when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu toggle functionality
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileNavOverlay = document.getElementById('mobileNavOverlay');
     
-    var overlay = document.getElementById('mobileNavOverlay');
-    var mobileNav = document.getElementById('mobileNav');
-    var hamburger = document.getElementById('mobileMenuToggle');
-    
-    if (overlay) {
-        overlay.style.display = 'none';
-        overlay.style.pointerEvents = 'none';
-        console.log('🧪 Fixed mobile nav overlay');
-    }
-    
-    if (mobileNav) {
-        mobileNav.classList.remove('active');
-        mobileNav.style.overflowY = 'auto';
-        mobileNav.style.webkitOverflowScrolling = 'touch';
-        mobileNav.style.height = '100vh';
-        mobileNav.style.maxHeight = '100vh';
-        console.log('🧪 Fixed mobile nav menu with scrolling');
-    }
-    
-    if (hamburger) {
-        hamburger.classList.remove('active');
-        
-        hamburger.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            var isOpen = mobileNav.classList.contains('active');
-            
-            if (isOpen) {
-                closeMobileMenu();
-            } else {
-                openMobileMenu();
-            }
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', function() {
+            toggleMobileMenu();
         });
     }
     
-    if (overlay) {
-        overlay.addEventListener('click', function() {
+    if (mobileNavOverlay) {
+        mobileNavOverlay.addEventListener('click', function() {
             closeMobileMenu();
         });
     }
-}
 
-function openMobileMenu() {
-    var overlay = document.getElementById('mobileNavOverlay');
-    var mobileNav = document.getElementById('mobileNav');
-    var hamburger = document.getElementById('mobileMenuToggle');
-    
-    mobileNav.classList.add('active');
-    hamburger.classList.add('active');
-    mobileNav.style.overflowY = 'auto';
-    mobileNav.style.webkitOverflowScrolling = 'touch';
-    
-    if (overlay) {
-        overlay.style.display = 'block';
-        overlay.style.pointerEvents = 'auto';
-    }
-    document.body.style.overflow = 'hidden';
-    mobileMenuOpen = true;
-    console.log('🧪 Mobile menu opened with scrolling');
+    // Close mobile menu when window is resized to desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && mobileMenuOpen) {
+            closeMobileMenu();
+        }
+    });
+});
+
+function toggleMobileMenu() {
+    const toggle = document.getElementById('mobileMenuToggle');
+    const overlay = document.getElementById('mobileNavOverlay');
+    const nav = document.getElementById('mobileNav');
+
+    mobileMenuOpen = !mobileMenuOpen;
+
+    if (toggle) toggle.classList.toggle('active', mobileMenuOpen);
+    if (overlay) overlay.classList.toggle('active', mobileMenuOpen);
+    if (nav) nav.classList.toggle('active', mobileMenuOpen);
+
+    // Prevent body scrolling when menu is open
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
 }
 
 function closeMobileMenu() {
-    var overlay = document.getElementById('mobileNavOverlay');
-    var mobileNav = document.getElementById('mobileNav');
-    var hamburger = document.getElementById('mobileMenuToggle');
-    
-    if (mobileNav) mobileNav.classList.remove('active');
-    if (hamburger) hamburger.classList.remove('active');
-    if (overlay) {
-        overlay.style.display = 'none';
-        overlay.style.pointerEvents = 'none';
+    if (mobileMenuOpen) {
+        toggleMobileMenu();
     }
-    document.body.style.overflow = 'auto';
-    console.log('Mobile menu closed');
+}
+
+function setupMobileNavigation(menuItems) {
+    const mobileNavItems = document.getElementById('mobileNavItems');
+    if (!mobileNavItems) return;
+
+    mobileNavItems.innerHTML = '';
+
+    menuItems.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'mobile-nav-item';
+        
+        const link = document.createElement('a');
+        link.className = 'mobile-nav-link';
+        link.setAttribute('data-tab', item.id);
+        link.onclick = () => {
+            showTab(item.id);
+            closeMobileMenu();
+        };
+        
+        link.innerHTML = `<span class="icon">${item.icon}</span>${item.label}`;
+        
+        li.appendChild(link);
+        mobileNavItems.appendChild(li);
+    });
 }
 
 // ===== INITIALIZATION =====
