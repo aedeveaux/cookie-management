@@ -3508,21 +3508,32 @@ let mobileMenuOpen = false;
 
 // Initialize mobile menu when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle functionality
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    const mobileNavOverlay = document.getElementById('mobileNavOverlay');
-    
-    if (mobileMenuToggle) {
-        mobileMenuToggle.addEventListener('click', function() {
-            toggleMobileMenu();
-        });
-    }
-    
-    if (mobileNavOverlay) {
-        mobileNavOverlay.addEventListener('click', function() {
-            closeMobileMenu();
-        });
-    }
+    // Mobile menu toggle functionality  
+const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+const mobileNav = document.getElementById('mobileNav');
+
+if (mobileMenuToggle) {
+    mobileMenuToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMobileMenu();
+    });
+}
+
+if (mobileNavOverlay) {
+    mobileNavOverlay.addEventListener('click', function() {
+        closeMobileMenu();
+    });
+}
+
+// Initialize menu state
+if (mobileNav) mobileNav.classList.remove('active');
+if (mobileMenuToggle) mobileMenuToggle.classList.remove('active');
+if (mobileNavOverlay) {
+    mobileNavOverlay.style.display = 'none';
+    mobileNavOverlay.style.pointerEvents = 'none';
+}
 
     // Close mobile menu when window is resized to desktop
     window.addEventListener('resize', function() {
