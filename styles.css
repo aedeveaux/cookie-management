@@ -498,6 +498,7 @@ body {
 .mobile-nav-link .icon {
     margin-right: 12px;
     font-size: 1.1rem;
+    display: none; 
 }
 
 .mobile-nav-footer {
