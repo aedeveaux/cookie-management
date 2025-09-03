@@ -3554,8 +3554,13 @@ function initializeMobileMenu() {
 }
 
 function setupMobileNavigation(menuItems) {
+    console.log('Setting up mobile navigation'); // Removed emoji
+    
     var mobileNavItems = document.getElementById('mobileNavItems');
-    if (!mobileNavItems) return;
+    if (!mobileNavItems) {
+        console.log('mobileNavItems not found');
+        return;
+    }
 
     mobileNavItems.innerHTML = '';
 
@@ -3570,20 +3575,29 @@ function setupMobileNavigation(menuItems) {
         // Auto-close click handler
         link.onclick = function(e) {
             e.preventDefault();
-            console.log('🧪 Mobile nav clicked:', item.label);
+            console.log('Mobile nav clicked: ' + item.label); // Removed emoji
             
-            if (item.onClick) {
-                item.onClick(); // Use custom onClick if provided
-            } else {
-                showTab(item.id); // Default behavior
-                closeMobileMenu(); // Auto-close
-            }
+            showTab(item.id);
+            
+            // Auto-close menu after short delay
+            setTimeout(function() {
+                closeMobileMenu();
+                console.log('Mobile menu closed');
+            }, 150);
         };
         
-        link.textContent = item.label;
+        // Handle both icon and label (like original menu)
+        if (item.icon) {
+            link.innerHTML = '<span class="icon">' + item.icon + '</span>' + item.label;
+        } else {
+            link.textContent = item.label;
+        }
+        
         li.appendChild(link);
         mobileNavItems.appendChild(li);
     });
+    
+    console.log('Mobile navigation setup complete');
 }
 
 function openMobileMenu() {
