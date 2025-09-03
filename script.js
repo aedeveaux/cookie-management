@@ -3555,29 +3555,47 @@ function closeMobileMenu() {
 }
 
 function setupMobileNavigation(menuItems) {
+    console.log('setupMobileNavigation called with:', menuItems);
+    
     const mobileNavItems = document.getElementById('mobileNavItems');
-    if (!mobileNavItems) return;
-
+    console.log('mobileNavItems element:', mobileNavItems);
+    
+    if (!mobileNavItems) {
+        console.log('ERROR: mobileNavItems element not found!');
+        return;
+    }
+    
     mobileNavItems.innerHTML = '';
-
-    menuItems.forEach(item => {
+    console.log('Cleared existing items');
+    
+    menuItems.forEach((item, index) => {
+        console.log(`Creating item ${index}:`, item);
+        
         const li = document.createElement('li');
         li.className = 'mobile-nav-item';
+        li.style.background = 'red'; // Temporary - to see if items are created
+        li.style.padding = '10px';
         
         const link = document.createElement('a');
         link.className = 'mobile-nav-link';
         link.setAttribute('data-tab', item.id);
+        link.textContent = item.label;
+        link.href = '#';
+        
         link.onclick = () => {
+            console.log('Menu item clicked:', item.id);
             showTab(item.id);
             closeMobileMenu();
         };
         
-        link.textContent = item.label;
-        
         li.appendChild(link);
         mobileNavItems.appendChild(li);
+        
+        console.log('Item added to DOM:', li);
     });
-}
+    
+    console.log('Setup complete. Final mobileNavItems content:', mobileNavItems.innerHTML);
+}}
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
