@@ -3506,7 +3506,6 @@ async function updateAllGirlsInSheets() {
 // ===== MOBILE MENU FUNCTIONALITY (FIXED) =====
 var mobileMenuOpen = false; // Changed to var
 
-// Mobile menu functions
 function toggleMobileMenu() {
     const toggle = document.getElementById('mobileMenuToggle');
     const overlay = document.getElementById('mobileNavOverlay');
@@ -3589,22 +3588,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Initialize mobile menu
-        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-        const mobileNavOverlay = document.getElementById('mobileNavOverlay');
-        
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleMobileMenu();
-            });
-        }
-        
-        if (mobileNavOverlay) {
-            mobileNavOverlay.addEventListener('click', function() {
-                closeMobileMenu();
-            });
-        }
+const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+
+if (mobileMenuToggle) {
+    mobileMenuToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleMobileMenu();
+    });
+}
+
+if (mobileNavOverlay) {
+    mobileNavOverlay.addEventListener('click', function() {
+        closeMobileMenu();
+    });
+}
         
         console.log('App initialized successfully - ready for login');
         
