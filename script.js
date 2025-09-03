@@ -1,5 +1,6 @@
 console.log('JavaScript starting to load...');
 
+
 // ===== FEATURE FLAGS =====
 var FEATURES = {
     ADVANCED_BOOTH_MANAGEMENT: false,  // Complex booth roles, check-in/out, hours tracking
@@ -3502,47 +3503,10 @@ async function updateAllGirlsInSheets() {
     }
 }
 
-// ===== MOBILE MENU FUNCTIONALITY =====
+// ===== MOBILE MENU FUNCTIONALITY (FIXED) =====
+var mobileMenuOpen = false; // Changed to var
 
-let mobileMenuOpen = false;
-
-// Initialize mobile menu when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle functionality  
-const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-const mobileNavOverlay = document.getElementById('mobileNavOverlay');
-const mobileNav = document.getElementById('mobileNav');
-
-if (mobileMenuToggle) {
-    mobileMenuToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleMobileMenu();
-    });
-}
-
-if (mobileNavOverlay) {
-    mobileNavOverlay.addEventListener('click', function() {
-        closeMobileMenu();
-    });
-}
-
-// Initialize menu state
-if (mobileNav) mobileNav.classList.remove('active');
-if (mobileMenuToggle) mobileMenuToggle.classList.remove('active');
-if (mobileNavOverlay) {
-    mobileNavOverlay.style.display = 'none';
-    mobileNavOverlay.style.pointerEvents = 'none';
-}
-
-    // Close mobile menu when window is resized to desktop
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768 && mobileMenuOpen) {
-            closeMobileMenu();
-        }
-    });
-});
-
+// Mobile menu functions
 function toggleMobileMenu() {
     const toggle = document.getElementById('mobileMenuToggle');
     const overlay = document.getElementById('mobileNavOverlay');
@@ -3551,38 +3515,61 @@ function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
 
     if (toggle) toggle.classList.toggle('active', mobileMenuOpen);
-    if (overlay) overlay.classList.toggle('active', mobileMenuOpen);
     if (nav) nav.classList.toggle('active', mobileMenuOpen);
+    
+    if (overlay) {
+        if (mobileMenuOpen) {
+            overlay.style.display = 'block';
+            overlay.style.pointerEvents = 'auto';
+        } else {
+            overlay.style.display = 'none';
+            overlay.style.pointerEvents = 'none';
+        }
+    }
 
-    // Prevent body scrolling when menu is open
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
 }
 
 function closeMobileMenu() {
     if (mobileMenuOpen) {
-        toggleMobileMenu();
+        const toggle = document.getElementById('mobileMenuToggle');
+        const overlay = document.getElementById('mobileNavOverlay');
+        const nav = document.getElementById('mobileNav');
+        
+        mobileMenuOpen = false;
+        
+        if (toggle) toggle.classList.remove('active');
+        if (nav) nav.classList.remove('active');
+        
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.style.pointerEvents = 'none';
+        }
+        
+        document.body.style.overflow = '';
     }
 }
 
-function setupMobileNavigation(menuItems) {
+function setupMobileNavigation(navItems) {
     const mobileNavItems = document.getElementById('mobileNavItems');
     if (!mobileNavItems) return;
-
+    
     mobileNavItems.innerHTML = '';
-
-    menuItems.forEach(item => {
+    
+    navItems.forEach(item => {
         const li = document.createElement('li');
         li.className = 'mobile-nav-item';
         
         const link = document.createElement('a');
         link.className = 'mobile-nav-link';
         link.setAttribute('data-tab', item.id);
-        link.onclick = () => {
+        link.textContent = item.label;
+        
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
             showTab(item.id);
             closeMobileMenu();
-        };
-        
-        link.innerHTML = `<span class="icon">${item.icon}</span>${item.label}`;
+        });
         
         li.appendChild(link);
         mobileNavItems.appendChild(li);
@@ -3601,6 +3588,24 @@ document.addEventListener('DOMContentLoaded', function() {
             saleDate.value = today;
         }
         
+        // Initialize mobile menu
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+        
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMobileMenu();
+            });
+        }
+        
+        if (mobileNavOverlay) {
+            mobileNavOverlay.addEventListener('click', function() {
+                closeMobileMenu();
+            });
+        }
+        
         console.log('App initialized successfully - ready for login');
         
     } catch (error) {
@@ -3608,13 +3613,6 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('App initialization error: ' + error.message);
     }
 });
-
-console.log('JavaScript loaded successfully!');function closeApprovalModal() {
-    const modal = document.getElementById('approvalModal');
-    if (modal) {
-        modal.remove();
-    }
-}
 
 
 
