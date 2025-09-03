@@ -3553,53 +3553,6 @@ function initializeMobileMenu() {
     }
 }
 
-function setupMobileNavigation(menuItems) {
-    console.log('Setting up mobile navigation'); // Removed emoji
-    
-    var mobileNavItems = document.getElementById('mobileNavItems');
-    if (!mobileNavItems) {
-        console.log('mobileNavItems not found');
-        return;
-    }
-
-    mobileNavItems.innerHTML = '';
-
-    menuItems.forEach(function(item) {
-        var li = document.createElement('li');
-        li.className = 'mobile-nav-item';
-        
-        var link = document.createElement('a');
-        link.className = 'mobile-nav-link';
-        link.href = '#';
-        
-        // Auto-close click handler
-        link.onclick = function(e) {
-            e.preventDefault();
-            console.log('Mobile nav clicked: ' + item.label); // Removed emoji
-            
-            showTab(item.id);
-            
-            // Auto-close menu after short delay
-            setTimeout(function() {
-                closeMobileMenu();
-                console.log('Mobile menu closed');
-            }, 150);
-        };
-        
-        // Handle both icon and label (like original menu)
-        if (item.icon) {
-            link.innerHTML = '<span class="icon">' + item.icon + '</span>' + item.label;
-        } else {
-            link.textContent = item.label;
-        }
-        
-        li.appendChild(link);
-        mobileNavItems.appendChild(li);
-    });
-    
-    console.log('Mobile navigation setup complete');
-}
-
 function openMobileMenu() {
     var overlay = document.getElementById('mobileNavOverlay');
     var mobileNav = document.getElementById('mobileNav');
