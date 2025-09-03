@@ -3503,80 +3503,79 @@ async function updateAllGirlsInSheets() {
     }
 }
 
-// ===== MOBILE MENU FUNCTIONALITY =====
+// ===== MOBILE MENU FUNCTIONALITY (FIXED) =====
+var mobileMenuOpen = false; // Changed to var
 
-let mobileMenuOpen = false;
-
-// Initialize mobile menu when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle functionality
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+// Our working mobile menu fix from HTML
+function initializeMobileMenu() {
+    console.log('🧪 Initializing fixed mobile menu');
     
-    if (mobileMenuToggle) {
-        mobileMenuToggle.addEventListener('click', function() {
-            toggleMobileMenu();
+    var overlay = document.getElementById('mobileNavOverlay');
+    var mobileNav = document.getElementById('mobileNav');
+    var hamburger = document.getElementById('mobileMenuToggle');
+    
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.style.pointerEvents = 'none';
+        console.log('🧪 Fixed mobile nav overlay');
+    }
+    
+    if (mobileNav) {
+        mobileNav.classList.remove('active');
+        mobileNav.style.overflowY = 'auto';
+        mobileNav.style.webkitOverflowScrolling = 'touch';
+        mobileNav.style.height = '100vh';
+        mobileNav.style.maxHeight = '100vh';
+        console.log('🧪 Fixed mobile nav menu with scrolling');
+    }
+    
+    if (hamburger) {
+        hamburger.classList.remove('active');
+        
+        hamburger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var isOpen = mobileNav.classList.contains('active');
+            
+            if (isOpen) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
         });
     }
     
-    if (mobileNavOverlay) {
-        mobileNavOverlay.addEventListener('click', function() {
+    if (overlay) {
+        overlay.addEventListener('click', function() {
             closeMobileMenu();
         });
     }
+}
 
-    // Close mobile menu when window is resized to desktop
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768 && mobileMenuOpen) {
-            closeMobileMenu();
-        }
-    });
-});
-
-function toggleMobileMenu() {
-    const toggle = document.getElementById('mobileMenuToggle');
-    const overlay = document.getElementById('mobileNavOverlay');
-    const nav = document.getElementById('mobileNav');
-
-    mobileMenuOpen = !mobileMenuOpen;
-
-    if (toggle) toggle.classList.toggle('active', mobileMenuOpen);
-    if (overlay) overlay.classList.toggle('active', mobileMenuOpen);
-    if (nav) nav.classList.toggle('active', mobileMenuOpen);
-
-    // Prevent body scrolling when menu is open
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+function openMobileMenu() {
+    var overlay = document.getElementById('mobileNavOverlay');
+    var mobileNav = document.getElementById('mobileNav');
+    var hamburger = document.getElementById('mobileMenuToggle');
+    
+    mobileNav.classList.add('active');
+    hamburger.classList.add('active');
+    mobileNav.style.overflowY = 'auto';
+    mobileNav.style.webkitOverflowScrolling = 'touch';
+    
+    if (overlay) {
+        overlay.style.display = 'block';
+        overlay.style.pointerEvents = 'auto';
+    }
+    document.body.style.overflow = 'hidden';
+    mobileMenuOpen = true;
+    console.log('🧪 Mobile menu opened with scrolling');
 }
 
 function closeMobileMenu() {
-    if (mobileMenuOpen) {
-        toggleMobileMenu();
-    }
-}
-
-function setupMobileNavigation(menuItems) {
-    const mobileNavItems = document.getElementById('mobileNavItems');
-    if (!mobileNavItems) return;
-
-    mobileNavItems.innerHTML = '';
-
-    menuItems.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'mobile-nav-item';
-        
-        const link = document.createElement('a');
-        link.className = 'mobile-nav-link';
-        link.setAttribute('data-tab', item.id);
-        link.onclick = () => {
-            showTab(item.id);
-            closeMobileMenu();
-        };
-        
-        link.innerHTML = `<span class="icon">${item.icon}</span>${item.label}`;
-        
-        li.appendChild(link);
-        mobileNavItems.appendChild(li);
-    });
+    var overlay = document.getElementById('mobileNavOverlay');
+    var mobileNav = document.getElementById('mobileNav');
+    var hamburger = document.get
 }
 
 // ===== INITIALIZATION =====
