@@ -8,79 +8,41 @@
 </head>
 <body>
 
-<script>
-console.log('🧪 Fixing mobile menu properly');
+    <script>
+console.log('🧪 Disabling mobile menu system');
 
 window.addEventListener('load', function() {
-    // Fix mobile menu so it doesn't block other buttons
+    // Disable mobile menu overlay that might be blocking clicks
     var overlay = document.getElementById('mobileNavOverlay');
-    var mobileNav = document.getElementById('mobileNav');
-    var hamburger = document.getElementById('mobileMenuToggle');
-    
     if (overlay) {
-        // Only show overlay when menu is actually open
         overlay.style.display = 'none';
         overlay.style.pointerEvents = 'none';
-        console.log('🧪 Fixed mobile nav overlay');
+        console.log('🧪 Disabled mobile nav overlay');
     }
     
+    var mobileNav = document.getElementById('mobileNav');
     if (mobileNav) {
-        // Keep menu hidden by default
-        mobileNav.classList.remove('active');
-        console.log('🧪 Fixed mobile nav menu');
+        mobileNav.style.display = 'none';
+        mobileNav.style.pointerEvents = 'none';
+        console.log('🧪 Disabled mobile nav menu');
     }
     
+    // Force hamburger menu to be closed
+    var hamburger = document.getElementById('mobileMenuToggle');
     if (hamburger) {
-        // Ensure hamburger starts closed
         hamburger.classList.remove('active');
-        
-        // Fix hamburger click to properly control overlay
-        hamburger.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🧪 Hamburger clicked');
-            
-            var isOpen = mobileNav.classList.contains('active');
-            
-            if (isOpen) {
-                // Close menu
-                mobileNav.classList.remove('active');
-                hamburger.classList.remove('active');
-                if (overlay) {
-                    overlay.style.display = 'none';
-                    overlay.style.pointerEvents = 'none';
-                }
-                document.body.style.overflow = 'auto';
-                console.log('🧪 Mobile menu closed');
-            } else {
-                // Open menu
-                mobileNav.classList.add('active');
-                hamburger.classList.add('active');
-                if (overlay) {
-                    overlay.style.display = 'block';
-                    overlay.style.pointerEvents = 'auto';
-                }
-                document.body.style.overflow = 'hidden';
-                console.log('🧪 Mobile menu opened');
-            }
-        });
-        
-        console.log('🧪 Hamburger menu fixed');
+        console.log('🧪 Reset hamburger menu');
     }
     
-    // Fix overlay click to close menu
-    if (overlay) {
-        overlay.addEventListener('click', function() {
-            console.log('🧪 Overlay clicked - closing menu');
-            mobileNav.classList.remove('active');
-            hamburger.classList.remove('active');
-            overlay.style.display = 'none';
-            overlay.style.pointerEvents = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
+    // Remove any mobile menu event listeners that might interfere
+    document.body.style.overflow = 'auto';
     
-    console.log('🧪 Mobile menu system properly fixed');
+    console.log('🧪 Mobile menu system disabled - testing buttons');
+    
+    // Now test if buttons work
+    setTimeout(function() {
+        console.log('🧪 Ready to test buttons - mobile menu disabled');
+    }, 1000);
 });
 </script>
 

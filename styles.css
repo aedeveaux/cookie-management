@@ -628,8 +628,3 @@ body {
     border-top: 1px solid #e9ecef;
     z-index: 1;
 }
-
-/* Add this to your styles.css */
-.mobile-nav-link .icon {
-    display: none;
-}
