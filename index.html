@@ -23,10 +23,10 @@
     </button>
 </div>
 <!-- Mobile Navigation Overlay -->
-<div class="mobile-nav-overlay" id="mobileNavOverlay" style="display: none !important; pointer-events: none !important; opacity: 0; z-index: -1;"></div>
+<div class="mobile-nav-overlay" id="mobileNavOverlay" style="display: none; pointer-events: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;"></div>
 
 <!-- Mobile Navigation Menu -->
-<nav class="mobile-nav" id="mobileNav" style="display: none !important; left: -300px;">
+<nav class="mobile-nav" id="mobileNav" style="position: fixed; top: 0; left: -300px; width: 280px; height: 100vh; background: white; z-index: 1000; transition: left 0.3s ease; overflow-y: auto;">
     <div class="mobile-nav-header">
         Cookie Management
     </div>
