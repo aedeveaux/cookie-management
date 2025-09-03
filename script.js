@@ -3587,6 +3587,26 @@ function closeMobileMenu() {
     console.log('Mobile menu closed');
 }
 
+// Add auto-close to mobile navigation clicks
+document.addEventListener('DOMContentLoaded', function() {
+    // Use event delegation to handle clicks on mobile nav items
+    document.addEventListener('click', function(e) {
+        // Check if the clicked element is a mobile navigation link
+        if (e.target && (
+            e.target.classList.contains('mobile-nav-link') || 
+            e.target.closest('.mobile-nav-link')
+        )) {
+            console.log('Mobile nav item clicked - will auto-close');
+            
+            // Auto-close the menu after a short delay
+            setTimeout(function() {
+                closeMobileMenu();
+                console.log('Mobile menu auto-closed');
+            }, 150);
+        }
+    });
+});
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing app...');
