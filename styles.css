@@ -565,7 +565,7 @@ body {
         display: none;
     }
 
-    .mobile-nav-overlay,
+    /* ADD THIS BACK: */
     .mobile-nav {
         display: block;
     }
