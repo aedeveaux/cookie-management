@@ -770,13 +770,13 @@ function setupCookieMomInterface() {
    
 
     setupMobileNavigation([
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'orders', label: 'Troop Orders' },
-    { id: 'girls', label: 'Girl Management' },
-    { id: 'request-approval', label: 'Parent Requests' },
-    { id: 'transfers', label: 'Transfers' },
-    { id: 'money', label: 'Money Collection' },
-    { id: 'booths', label: 'Booth Management' },
+    { id: 'dashboard', icon: '●', label: 'Dashboard' },
+    { id: 'orders', icon: '●', label: 'Troop Orders' },
+    { id: 'girls', icon: '●', label: 'Girl Management' },
+    { id: 'request-approval', icon: '●', label: 'Parent Requests' },
+    { id: 'transfers', icon: '●', label: 'Transfers' },
+    { id: 'money', icon: '●', label: 'Money Collection' },
+    { id: 'booths', icon: '●', label: 'Booth Management' },
 ]);
 }
 
@@ -810,10 +810,10 @@ function setupParentInterface() {
     }, 100);
 
     setupMobileNavigation([
-    { id: 'parent-orders', label: 'My Orders' },
-    { id: 'my-balance', label: 'My Balance' },
-    { id: 'my-sales', label: 'My Sales' },
-    { id: 'parent-booths', label: 'Booth Signups' },
+    { id: 'parent-orders', icon: '●', label: 'My Orders' },
+    { id: 'my-balance', icon: '●', label: 'My Balance' },
+    { id: 'my-sales', icon: '●', label: 'My Sales' },
+    { id: 'parent-booths', icon: '●', label: 'Booth Signups' },
 ]);
 }
 
@@ -3586,8 +3586,6 @@ function closeMobileMenu() {
     document.body.style.overflow = 'auto';
     console.log('Mobile menu closed');
 }
-
-
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
