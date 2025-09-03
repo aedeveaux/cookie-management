@@ -628,3 +628,30 @@ body {
     border-top: 1px solid #e9ecef;
     z-index: 1;
 }
+
+/* ==== Mobile menu override patch (visibility & stacking) ==== */
+.menu-toggle { position: relative; z-index: 10002 !important; }
+
+.mobile-nav-overlay {
+  z-index: 10000 !important; /* below the nav, above page */
+  background: rgba(0,0,0,0.45) !important;
+}
+
+.mobile-nav {
+  z-index: 10001 !important; /* above the overlay */
+  background: #fff !important;
+  color: #2c3e50 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure the panel actually enters the viewport when active */
+.mobile-nav.active { left: 0 !important; transform: none !important; }
+
+/* Guarantee menu exists on small screens */
+@media (max-width: 768px) {
+  .mobile-nav { display: block !important; }
+}
+
+/* Prevent background scroll when menu is open (optional UX) */
+body.menu-open { overflow: hidden !important; }
+/* ==== /Mobile menu override patch ==== */
