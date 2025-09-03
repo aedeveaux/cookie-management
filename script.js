@@ -3506,6 +3506,55 @@ async function updateAllGirlsInSheets() {
 // ===== MOBILE MENU FUNCTIONALITY (FIXED) =====
 var mobileMenuOpen = false; // Changed to var
 
+function toggleMobileMenu() {
+    const toggle = document.getElementById('mobileMenuToggle');
+    const overlay = document.getElementById('mobileNavOverlay');
+    const nav = document.getElementById('mobileNav');
+
+    mobileMenuOpen = !mobileMenuOpen;
+
+    if (toggle) toggle.classList.toggle('active', mobileMenuOpen);
+    if (nav) {
+        nav.classList.toggle('active', mobileMenuOpen);
+        nav.style.display = mobileMenuOpen ? 'block' : 'none';
+    }
+    
+    if (overlay) {
+        if (mobileMenuOpen) {
+            overlay.style.display = 'block';
+            overlay.style.pointerEvents = 'auto';
+        } else {
+            overlay.style.display = 'none';
+            overlay.style.pointerEvents = 'none';
+        }
+    }
+
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+}
+
+function closeMobileMenu() {
+    if (mobileMenuOpen) {
+        const toggle = document.getElementById('mobileMenuToggle');
+        const overlay = document.getElementById('mobileNavOverlay');
+        const nav = document.getElementById('mobileNav');
+        
+        mobileMenuOpen = false;
+        
+        if (toggle) toggle.classList.remove('active');
+        if (nav) {
+            nav.classList.remove('active');
+            nav.style.display = 'none';
+        }
+        
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.style.pointerEvents = 'none';
+        }
+        
+        document.body.style.overflow = '';
+    }
+}
+
 // Our working mobile menu fix from HTML
 function initializeMobileMenu() {
     console.log('🧪 Initializing fixed mobile menu');
@@ -3570,21 +3619,6 @@ function openMobileMenu() {
     document.body.style.overflow = 'hidden';
     mobileMenuOpen = true;
     console.log('🧪 Mobile menu opened with scrolling');
-}
-
-function closeMobileMenu() {
-    var overlay = document.getElementById('mobileNavOverlay');
-    var mobileNav = document.getElementById('mobileNav');
-    var hamburger = document.getElementById('mobileMenuToggle');
-    
-    if (mobileNav) mobileNav.classList.remove('active');
-    if (hamburger) hamburger.classList.remove('active');
-    if (overlay) {
-        overlay.style.display = 'none';
-        overlay.style.pointerEvents = 'none';
-    }
-    document.body.style.overflow = 'auto';
-    console.log('Mobile menu closed');
 }
 
 // ===== INITIALIZATION =====

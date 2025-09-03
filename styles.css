@@ -421,11 +421,12 @@ body {
 
 /* Mobile Navigation Menu */
 .mobile-nav {
+    display: none;
     position: fixed;
     top: 0;
     left: -300px;
     width: 280px;
-    height: 100vh;
+    height: 100%;
     background: white;
     z-index: 1000;
     transition: left 0.3s ease;
@@ -434,6 +435,7 @@ body {
 }
 
 .mobile-nav.active {
+    display: block;
     left: 0;
 }
 
