@@ -20,3 +20,28 @@
   background: none !important;
 }
 /* ==== /Menu labels visibility & gentle icon removal ==== */
+
+/* ==== Mobile menu item visibility overrides ==== */
+.mobile-nav-items { display: block !important; padding: 8px 0 !important; }
+.mobile-nav-items li { display: block !important; opacity: 1 !important; visibility: visible !important; height: auto !important; max-height: none !important; }
+
+/* Buttons/links inside the menu */
+.mobile-nav a,
+.mobile-nav .nav-item-btn,
+.mobile-nav .mobile-nav-link {
+  display: block !important;
+  color: #2c3e50 !important;
+  background: transparent !important;
+  text-decoration: none !important;
+  padding: 12px 16px !important;
+  line-height: 1.35 !important;
+  font-size: 16px !important;
+}
+
+/* Ensure text isn’t the same color as the panel */
+.mobile-nav, .mobile-nav * { color: inherit; }
+
+/* If any items were being hidden via .hidden or aria-hidden */
+.mobile-nav .hidden { display: none !important; }
+.mobile-nav [aria-hidden="true"] { display: none !important; }
+/* ==== /Mobile menu item visibility overrides ==== */
