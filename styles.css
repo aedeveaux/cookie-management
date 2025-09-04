@@ -659,3 +659,10 @@ body {
   .mobile-nav-link.nav-item-btn.active { background: rgba(39,174,96,0.10); }
 }
 /* ==== /Mobile hamburger menu sizing & layout (re-applied) ==== */
+
+/* ==== Mobile nav consistent width & offset (medium phones) ==== */
+@media (max-width: 900px) and (min-width: 481px) {
+  .mobile-nav { left: -86vw; }
+  .mobile-nav.active { left: 0; }
+}
+/* ==== /Mobile nav consistent width & offset ==== */
