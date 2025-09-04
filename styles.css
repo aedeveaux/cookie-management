@@ -628,3 +628,34 @@ body {
     border-top: 1px solid #e9ecef;
     z-index: 1;
 }
+
+/* ==== Mobile hamburger menu sizing & layout (re-applied) ==== */
+@media (max-width: 900px) {
+  /* Panel width */
+  .mobile-nav { width: 86vw; max-width: 420px; }
+
+  /* List reset */
+  .mobile-nav-items { list-style: none; margin: 0; padding: 6px 0; }
+  .mobile-nav-items li { margin: 0; }
+
+  /* Full-width stacked buttons */
+  .mobile-nav-link.nav-item-btn {
+    display: block;          /* span full row */
+    width: 100%;             /* fill panel */
+    padding: 14px 16px;      /* comfortable touch target */
+    text-align: left;        /* label on left */
+    border: 0;               /* remove default button border */
+    background: transparent; /* inherit panel */
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  /* Separators between items */
+  .mobile-nav-items li + li .mobile-nav-link.nav-item-btn { border-top: 1px solid rgba(0,0,0,0.08); }
+
+  /* Feedback states */
+  .mobile-nav-link.nav-item-btn:hover,
+  .mobile-nav-link.nav-item-btn:focus { background: rgba(0,0,0,0.04); outline: none; }
+  .mobile-nav-link.nav-item-btn.active { background: rgba(39,174,96,0.10); }
+}
+/* ==== /Mobile hamburger menu sizing & layout (re-applied) ==== */
