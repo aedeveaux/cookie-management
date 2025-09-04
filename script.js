@@ -818,6 +818,61 @@ function setupParentInterface() {
 }
 
 
+function setupMobileNavigation(items) {
+    try {
+        // Find a target list container for mobile nav
+        var list = document.getElementById('mobileNavItems') ||
+                   document.getElementById('mobileNavList') ||
+                   document.querySelector('.mobile-nav-items');
+        if (!list) {
+            console.warn('Mobile nav list container not found. Expected #mobileNavItems or .mobile-nav-items');
+            return;
+        }
+
+        // Build menu markup from the provided items
+        list.innerHTML = (items || []).map(function (it) {
+            var id = it && it.id ? String(it.id) : '';
+            var label = it && it.label ? String(it.label) : '';
+            if (!id || !label) return '';
+            return (
+                '<li>' +
+                    '<button type="button" class="mobile-nav-link nav-item-btn" data-tab="' + id + '">' +
+                        label +
+                    '</button>' +
+                '</li>'
+            );
+        }).join('');
+
+        // Bind click handlers
+        var links = list.querySelectorAll('.mobile-nav-link');
+        links.forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                var tab = this.getAttribute('data-tab');
+                if (tab) {
+                    showTab(tab);
+                }
+                // Close the mobile nav if the elements exist
+                var panel = document.querySelector('.mobile-nav');
+                var overlay = document.querySelector('.mobile-nav-overlay');
+                if (panel) panel.classList.remove('active');
+                if (overlay) overlay.style.display = 'none';
+                document.body.classList.remove('menu-open');
+            }, { passive: true });
+        });
+
+        // Ensure currently active tab is reflected in menu state
+        var activeTab = document.querySelector('.tab-content.active');
+        if (activeTab) {
+            var activeId = activeTab.id;
+            list.querySelectorAll('.mobile-nav-link').forEach(function (a) {
+                a.classList.toggle('active', a.getAttribute('data-tab') === activeId);
+            });
+        }
+    } catch (err) {
+        console.error('setupMobileNavigation error:', err);
+    }
+}
+
 // ===== TAB MANAGEMENT =====
 function showTab(tabName) {
     if (!currentUser) return;
