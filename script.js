@@ -20,7 +20,8 @@ var cookieTypes = {
     'CDL': { name: 'Caramel Delites', price: 6.00 },
     'CCC': { name: 'Caramel Chocolate Chip', price: 6.00 },
     'PBP': { name: 'Peanut Butter Patties', price: 6.00 },
-    'PBS': { name: 'Peanut Butter Sandwiches', price: 6.00 }
+    'PBS': { name: 'Peanut Butter Sandwiches', price: 6.00 },
+    'EX': { name: 'Exploremores', price: 6.00 }
 };
 
 var troopInventory = {};
