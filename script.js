@@ -36,7 +36,51 @@ var currentUser = null;
 var booths = [];
 var boothSignups = [];
 
-
+// Define booth roles with capacity limits and requirements
+const BOOTH_ROLES = {
+    'money-handler': {
+        name: 'Money Handler',
+        description: 'Handle cash and digital payments (requires adult)',
+        maxCapacity: 3, // 1 adult + 2 girls
+        requiresAdult: true,
+        icon: '💰'
+    },
+    'setup': {
+        name: 'Setup & Display',
+        description: 'Set up table, arrange cookies, decorations',
+        maxCapacity: 3,
+        requiresAdult: false,
+        icon: '🏗️'
+    },
+    'inventory': {
+        name: 'Inventory Manager',
+        description: 'Count cookies before/after, track stock',
+        maxCapacity: 2, // 1 adult + 1 girl
+        requiresAdult: true,
+        icon: '📦'
+    },
+    'marketing': {
+        name: 'Marketing Manager',
+        description: 'Booth strategy, signage, customer flow',
+        maxCapacity: 1,
+        requiresAdult: false,
+        icon: '📣'
+    },
+    'bagging': {
+        name: 'Cookie Bagger',
+        description: 'Bag cookies for customers (3+ boxes)',
+        maxCapacity: 2,
+        requiresAdult: false,
+        icon: '🛍️'
+    },
+    'customer-engagement': {
+        name: 'Customer Greeter',
+        description: 'Welcome customers, encourage sales',
+        maxCapacity: 4,
+        requiresAdult: false,
+        icon: '👋'
+    }
+};
 
 // Demo user accounts
 var users = [
@@ -419,10 +463,7 @@ async function loadBoothSignupsFromSheets() {
 
         let data = rows;
         const first = data[0] || [];
-        const hasHeader =
-            String(first[0] || '').toLowerCase() === 'id' ||
-            String(first[1] || '').toLowerCase() === 'boothid' ||
-            String(first[3] || '').toLowerCase() === 'girlname';
+        const hasHeader = String(first[0] || '').toLowerCase() === 'id';
 
         if (hasHeader) data = data.slice(1);
 
@@ -437,7 +478,13 @@ async function loadBoothSignupsFromSheets() {
                 status: r[5] || 'confirmed',
                 notes: r[6] || '',
                 signedAt: r[7] || '',
-                roles: ['general'] // Simple role system
+                roles: (() => { 
+                    try { 
+                        return JSON.parse(r[8] || '["general"]'); 
+                    } catch { 
+                        return ['general']; 
+                    } 
+                })() // Parse roles from JSON
             }));
     } catch (e) {
         console.error('Error loading Booth_Signups from sheets:', e);
@@ -1053,47 +1100,6 @@ async function submitParentOrder() {
     showMessage('parentOrderMessages', `Request submitted for ${totalBoxes} boxes ($${totalValue}). Awaiting Cookie Mom approval.`);
 }
 
-function updateParentOrderHistory() {
-    const container = document.getElementById('parentOrderHistoryDisplay');
-    if (!container || currentUser.role !== 'parent') return;
-    
-    const userOrders = parentOrders.filter(order => order.parentId === currentUser.id);
-    
-    if (userOrders.length === 0) {
-        container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No requests submitted yet</p>';
-        return;
-    }
-    
-    container.innerHTML = userOrders.map(order => {
-        const statusColor = order.status === 'approved' ? '#28a745' : 
-                          order.status === 'partial' ? '#ffc107' : 
-                          order.status === 'delivered' ? '#17a2b8' :
-                          order.status === 'declined' ? '#dc3545' : '#6c757d';
-        
-        return `
-            <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <strong>Cookie Request #${order.id}</strong><br>
-                        <small>Requested: ${order.requestedAt}</small><br>
-                        <small>Reason: ${order.reason}</small><br>
-                        <small>Total: ${order.totalBoxes} boxes ($${order.totalValue.toFixed(2)})</small>
-                        ${order.notes ? `<br><small style="color: #666;">Notes: ${order.notes}</small>` : ''}
-                        ${order.status === 'approved' || order.status === 'partial' ? 
-                            `<br><small style="color: #28a745;">Approved: ${order.approvedBoxes || 0} boxes ($${(order.approvedValue || 0).toFixed(2)})</small>` : ''}
-                    </div>
-                    <div style="text-align: right;">
-                        <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 10px; font-size: 0.8rem; text-transform: uppercase;">
-                            ${order.status}
-                        </span>
-                        ${order.status === 'pending' ? `<br><button class="btn" style="padding: 3px 8px; font-size: 0.7rem; margin-top: 5px; background: #007bff;" onclick="editParentOrder(${order.id})">Edit</button>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
 
 function updateParentOrderDropdowns() {
     const parentOrderGirl = document.getElementById('parentOrderGirl');
@@ -1553,12 +1559,12 @@ function setupParentBoothSignups() {
     `;
     
     if (myGirls.length > 0) {
-        displayAvailableBooths();
-        displayMyBoothSignups();
+        displayAvailableBoothsWithRoles();
+        displayMyBoothSignupsWithRoles();
     }
 }
 
-function displayAvailableBooths() {
+function displayAvailableBoothsWithRoles() {
     const container = document.getElementById('availableBooths');
     if (!container) return;
     
@@ -1572,32 +1578,75 @@ function displayAvailableBooths() {
     
     container.innerHTML = `
         <h3>Available Booths</h3>
-        ${availableBooths.map(booth => `
-            <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <strong>${booth.name}</strong><br>
-                        <small>${booth.date} • ${booth.startTime}-${booth.endTime}</small><br>
-                        <small>Type: ${booth.type}</small>
+        ${availableBooths.map(booth => {
+            const signupCounts = getBoothSignupCounts(booth.id);
+            
+            return `
+                <div class="booth-card" style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+                    <div class="booth-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <div>
+                            <strong style="font-size: 1.1rem;">${booth.name}</strong><br>
+                            <small style="color: #666;">${booth.date} • ${booth.startTime}-${booth.endTime}</small><br>
+                            <small style="color: #666;">Type: ${booth.type}</small>
+                        </div>
+                        <span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 10px; font-size: 0.8rem;">
+                            ${getTotalSignupCount(booth.id)} signed up
+                        </span>
                     </div>
-                    <div>
-                        <select id="girl-${booth.id}" style="margin-bottom: 10px;">
-                            <option value="">Select girl...</option>
-                            ${myGirls.map(girl => 
-                                `<option value="${girl.id}">${girl.girlName}</option>`
-                            ).join('')}
-                        </select><br>
-                        <button class="btn" onclick="signupForBooth('${booth.id}')" style="padding: 8px 15px;">
-                            Sign Up
-                        </button>
+                    
+                    <div class="roles-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                        ${Object.keys(BOOTH_ROLES).map(roleKey => {
+                            const role = BOOTH_ROLES[roleKey];
+                            const currentCount = signupCounts[roleKey] || 0;
+                            const isAvailable = currentCount < role.maxCapacity;
+                            
+                            return `
+                                <div class="role-signup" style="border: 1px solid ${isAvailable ? '#28a745' : '#6c757d'}; border-radius: 5px; padding: 10px; background: ${isAvailable ? '#f8fff8' : '#f8f9fa'};">
+                                    <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 8px;">
+                                        <div style="flex: 1;">
+                                            <strong style="font-size: 0.9rem; color: ${isAvailable ? '#28a745' : '#6c757d'};">
+                                                ${role.icon} ${role.name}
+                                            </strong>
+                                            ${role.requiresAdult ? '<br><small style="color: #dc3545;">Requires Adult</small>' : ''}
+                                        </div>
+                                        <small style="color: #666;">${currentCount}/${role.maxCapacity}</small>
+                                    </div>
+                                    <p style="font-size: 0.8rem; color: #666; margin: 5px 0;">${role.description}</p>
+                                    
+                                    ${isAvailable ? `
+                                        <div class="signup-controls" style="display: flex; gap: 5px; align-items: center; margin-top: 8px;">
+                                            <select class="girl-select" data-booth="${booth.id}" data-role="${roleKey}" style="flex: 1; padding: 4px; font-size: 0.8rem;">
+                                                <option value="">Select girl...</option>
+                                                ${myGirls.map(girl => 
+                                                    `<option value="${girl.id}">${girl.girlName}</option>`
+                                                ).join('')}
+                                            </select>
+                                            <button class="btn signup-btn" data-booth="${booth.id}" data-role="${roleKey}" 
+                                                    style="padding: 4px 8px; font-size: 0.8rem; background: #28a745;">
+                                                Sign Up
+                                            </button>
+                                        </div>
+                                    ` : `
+                                        <div style="text-align: center; margin-top: 8px;">
+                                            <span style="color: #6c757d; font-size: 0.8rem;">Role Full</span>
+                                        </div>
+                                    `}
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
-            </div>
-        `).join('')}
+            `;
+        }).join('')}
     `;
+    
+    // Add event listeners for signup buttons
+    container.querySelectorAll('.signup-btn').forEach(btn => {
+        btn.addEventListener('click', handleRoleSignup);
+    });
 }
 
-function displayMyBoothSignups() {
+function displayMyBoothSignupsWithRoles() {
     const container = document.getElementById('myBoothSignups');
     if (!container) return;
     
@@ -1609,17 +1658,32 @@ function displayMyBoothSignups() {
     }
     
     container.innerHTML = mySignups.map(signup => `
-        <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div class="signup-card" style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px; background: white;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
                 <div>
                     <strong>${signup.girlName} → ${signup.boothName}</strong><br>
-                    <small>${signup.boothDate || 'Date TBD'}</small><br>
-                    <small>Status: ${signup.status}</small>
+                    <small style="color: #666;">${signup.boothDate || 'Date TBD'}</small><br>
+                    <small style="color: #666;">Status: ${signup.status}</small>
                 </div>
-                <button class="btn" style="background: #dc3545; padding: 5px 10px;" 
+                <button class="btn" style="background: #dc3545; padding: 5px 10px; font-size: 0.8rem;" 
                         onclick="cancelBoothSignup('${signup.id}')">
-                    Cancel
+                    Cancel All
                 </button>
+            </div>
+            
+            <div class="roles-display" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
+                ${(signup.roles || ['general']).map(roleKey => {
+                    const role = BOOTH_ROLES[roleKey] || { name: roleKey, icon: '👤' };
+                    return `
+                        <span class="role-badge" style="background: #e3f2fd; color: #1976d2; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; display: flex; align-items: center; gap: 3px;">
+                            ${role.icon} ${role.name}
+                            <button onclick="removeRoleFromSignup('${signup.id}', '${roleKey}')" 
+                                    style="background: none; border: none; color: #d32f2f; margin-left: 3px; cursor: pointer; font-size: 0.7rem;">
+                                ×
+                            </button>
+                        </span>
+                    `;
+                }).join('')}
             </div>
         </div>
     `).join('');
@@ -1669,7 +1733,7 @@ async function signupForBooth(boothId) {
     try {
         await saveBoothSignupToSheets(signup);
         showMessage('parentBoothsMessages', `${girl.girlName} signed up for ${booth.name}!`);
-        displayMyBoothSignups();
+        displayMyBoothSignupsWithRoles();
         girlSelect.value = '';
     } catch (error) {
         showMessage('parentBoothsMessages', 'Error saving signup. Please try again.', true);
@@ -1682,11 +1746,120 @@ async function cancelBoothSignup(signupId) {
     const index = boothSignups.findIndex(s => s.id == signupId);
     if (index > -1) {
         boothSignups.splice(index, 1);
-        displayMyBoothSignups();
+        displayMyBoothSignupsWithRoles();
         showMessage('parentBoothsMessages', 'Signup cancelled.');
     }
 }
 
+function getBoothSignupCounts(boothId) {
+    const signups = boothSignups.filter(s => s.boothId == boothId);
+    const counts = {};
+    
+    signups.forEach(signup => {
+        (signup.roles || ['general']).forEach(role => {
+            counts[role] = (counts[role] || 0) + 1;
+        });
+    });
+    
+    return counts;
+}
+
+function getTotalSignupCount(boothId) {
+    return boothSignups.filter(s => s.boothId == boothId).length;
+}
+
+async function removeRoleFromSignup(signupId, roleKey) {
+    const signup = boothSignups.find(s => s.id == signupId);
+    if (!signup) return;
+    
+    // Remove role from array
+    signup.roles = (signup.roles || []).filter(r => r !== roleKey);
+    
+    // If no roles left, remove entire signup
+    if (signup.roles.length === 0) {
+        await cancelBoothSignup(signupId);
+        return;
+    }
+    
+    // Update signup in sheets
+    await updateBoothSignupInSheets(signup);
+    
+    // Refresh displays
+    displayAvailableBoothsWithRoles();
+    displayMyBoothSignupsWithRoles();
+    
+    const role = BOOTH_ROLES[roleKey];
+    showMessage('parentBoothsMessages', `Removed ${role ? role.name : roleKey} role.`);
+}
+
+function handleRoleSignup(event) {
+    const boothId = event.target.getAttribute('data-booth');
+    const roleKey = event.target.getAttribute('data-role');
+    const girlSelect = document.querySelector(`select[data-booth="${boothId}"][data-role="${roleKey}"]`);
+    const girlId = girlSelect ? girlSelect.value : '';
+    
+    if (!girlId) {
+        showMessage('parentBoothsMessages', 'Please select a girl first.', true);
+        return;
+    }
+    
+    signupForBoothRole(boothId, girlId, roleKey);
+}
+
+async function signupForBoothRole(boothId, girlId, roleKey) {
+    const booth = booths.find(b => b.id == boothId);
+    const girl = girls.find(g => g.id == girlId);
+    const role = BOOTH_ROLES[roleKey];
+    
+    if (!booth || !girl || !role) {
+        showMessage('parentBoothsMessages', 'Invalid selection.', true);
+        return;
+    }
+    
+    // Check if girl is already signed up for this booth in any role
+    const existingSignup = boothSignups.find(s => 
+        s.boothId == boothId && s.girlId == girlId
+    );
+    
+    if (existingSignup) {
+        // Add role to existing signup
+        if (!existingSignup.roles.includes(roleKey)) {
+            existingSignup.roles.push(roleKey);
+            await updateBoothSignupInSheets(existingSignup);
+            showMessage('parentBoothsMessages', `Added ${role.name} role for ${girl.girlName}!`);
+        } else {
+            showMessage('parentBoothsMessages', `${girl.girlName} is already signed up for ${role.name}.`, true);
+            return;
+        }
+    } else {
+        // Create new signup
+        const signup = {
+            id: Date.now(),
+            boothId: booth.id,
+            boothName: booth.name,
+            boothDate: booth.date,
+            girlId: girl.id,
+            girlName: girl.girlName,
+            parentName: currentUser.name,
+            roles: [roleKey],
+            status: 'confirmed',
+            signedAt: new Date().toLocaleString(),
+            notes: ''
+        };
+        
+        boothSignups.push(signup);
+        await saveBoothSignupToSheets(signup);
+        showMessage('parentBoothsMessages', `${girl.girlName} signed up for ${role.name} at ${booth.name}!`);
+    }
+    
+    // Refresh displays
+    displayAvailableBoothsWithRoles();
+    displayMyBoothSignupsWithRoles();
+    
+    // Clear the girl selection
+    const girlSelect = document.querySelector(`select[data-booth="${boothId}"][data-role="${roleKey}"]`);
+    if (girlSelect) girlSelect.value = '';
+}
 
 // ===== COOKIE MOM DASHBOARD FUNCTIONS =====
 
@@ -3117,20 +3290,21 @@ function updateBoothDisplay() {
     }
     
     container.innerHTML = activeBooths.map(booth => {
-        const signupCount = boothSignups.filter(s => s.boothId == booth.id).length;
+        const totalSignups = getTotalSignupCount(booth.id);
+        const signupCounts = getBoothSignupCounts(booth.id);
         
         return `
-            <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <div>
-                        <strong>${booth.name}</strong>
+                        <strong style="font-size: 1.1rem;">${booth.name}</strong>
                         <span style="background: #28a745; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 10px;">✓ SAVED</span>
                         <br>
                         <small>${booth.date} | ${booth.startTime} - ${booth.endTime}</small><br>
-                        <small>Signups: ${signupCount}</small><br>
+                        <small>Total Signups: ${totalSignups}</small><br>
                         <small>Created: ${booth.createdAt}</small>
                     </div>
-                    <div>
+                    <div style="text-align: right;">
                         <button class="btn" style="background: #007bff; padding: 5px 10px; font-size: 0.8rem; margin-right: 5px;" 
                                 onclick="editBooth(${booth.id})">
                             Edit
@@ -3142,11 +3316,29 @@ function updateBoothDisplay() {
                     </div>
                 </div>
                 
-                ${signupCount > 0 ? `
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                        <strong>Signups:</strong><br>
+                ${totalSignups > 0 ? `
+                    <div class="roles-summary" style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                        <strong>Role Assignments:</strong><br>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 8px;">
+                            ${Object.keys(BOOTH_ROLES).map(roleKey => {
+                                const role = BOOTH_ROLES[roleKey];
+                                const count = signupCounts[roleKey] || 0;
+                                const color = count === 0 ? '#dc3545' : count >= role.maxCapacity ? '#28a745' : '#ffc107';
+                                
+                                return `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px; border-radius: 3px; background: white; border-left: 3px solid ${color};">
+                                        <span style="font-size: 0.9rem;">${role.icon} ${role.name}</span>
+                                        <span style="font-weight: bold; color: ${color};">${count}/${role.maxCapacity}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                        <strong>Detailed Signups:</strong><br>
                         ${boothSignups.filter(s => s.boothId == booth.id)
-                            .map(s => `• ${s.girlName} (${s.parentName})`)
+                            .map(s => `• ${s.girlName} (${s.parentName}) - ${(s.roles || ['general']).map(r => BOOTH_ROLES[r] ? BOOTH_ROLES[r].name : r).join(', ')}`)
                             .join('<br>')}
                     </div>
                 ` : ''}
@@ -3154,6 +3346,7 @@ function updateBoothDisplay() {
         `;
     }).join('');
 }
+
 
 function editBooth(boothId) {
     const booth = booths.find(b => b.id == boothId);
@@ -3629,9 +3822,19 @@ function openMobileMenu() {
 }
 
 function closeMobileMenu() {
-    var overlay = document.getElementById('mobileNavOverlay');
-    var mobileNav = document.getElementById('mobileNav');
-    var hamburger = document.get
+  var overlay = document.getElementById('mobileNavOverlay');
+  var mobileNav = document.getElementById('mobileNav');
+  var hamburger = document.getElementById('mobileMenuToggle');
+
+  if (mobileNav) mobileNav.classList.remove('active');
+  if (hamburger) hamburger.classList.remove('active');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.style.pointerEvents = 'none';
+  }
+  document.body.style.overflow = '';
+  mobileMenuOpen = false;
+  console.log('🧪 Mobile menu closed');
 }
 
 // ===== INITIALIZATION =====

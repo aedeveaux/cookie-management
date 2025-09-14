@@ -364,7 +364,42 @@ body {
         margin-bottom: 5px;
     }
 }
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+}
 
+@media (max-width: 768px) {
+    .roles-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .booth-header {
+        flex-direction: column;
+        align-items: start !important;
+        gap: 10px;
+    }
+    
+    .signup-controls {
+        flex-direction: column;
+        gap: 8px !important;
+    }
+    
+    .signup-controls select {
+        width: 100%;
+    }
+    
+    .roles-display {
+        flex-direction: column;
+        gap: 5px !important;
+    }
+    
+    .role-badge {
+        justify-content: space-between;
+        padding: 8px 12px !important;
+    }
+}
 /* ===== MOBILE HAMBURGER MENU STYLES ===== */
 
 /* Enhanced Header for Mobile */
