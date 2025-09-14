@@ -899,12 +899,20 @@ function setupMobileNavigation(items) {
                 if (tab) {
                     showTab(tab);
                 }
-                // Close the mobile nav if the elements exist
-                var panel = document.querySelector('.mobile-nav');
-                var overlay = document.querySelector('.mobile-nav-overlay');
-                if (panel) panel.classList.remove('active');
-                if (overlay) overlay.style.display = 'none';
-                document.body.classList.remove('menu-open');
+                // Close the mobile nav using the dedicated closer so body scroll unlocks
+                if (typeof closeMobileMenu === 'function') {
+                    closeMobileMenu();
+                } else {
+                    var panel = document.querySelector('.mobile-nav');
+                    var overlay = document.querySelector('.mobile-nav-overlay');
+                    if (panel) panel.classList.remove('active');
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                        overlay.style.pointerEvents = 'none';
+                    }
+                    document.body.classList.remove('menu-open');
+                    try { document.body.style.overflow = ''; } catch (_) {}
+                }
             }, { passive: true });
         });
 
@@ -919,6 +927,22 @@ function setupMobileNavigation(items) {
     } catch (err) {
         console.error('setupMobileNavigation error:', err);
     }
+}
+
+// Dedicated function to close the mobile menu and unlock scroll
+function closeMobileMenu() {
+    var overlay = document.getElementById('mobileNavOverlay');
+    var mobileNav = document.getElementById('mobileNav');
+    var hamburger = document.getElementById('mobileMenuToggle');
+
+    if (mobileNav) mobileNav.classList.remove('active');
+    if (hamburger) hamburger.classList.remove('active');
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.style.pointerEvents = 'none';
+    }
+    document.body.classList.remove('menu-open');
+    try { document.body.style.overflow = ''; } catch (_) {}
 }
 
 // ===== TAB MANAGEMENT =====
@@ -987,6 +1011,8 @@ function showTab(tabName) {
             transferDate.value = today;
         }
     }
+    // Always close the mobile menu when navigating to a tab
+    if (typeof closeMobileMenu === 'function') closeMobileMenu();
 }
 
 
