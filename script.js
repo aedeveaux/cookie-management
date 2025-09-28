@@ -1693,19 +1693,13 @@ function displayMyBoothSignupsWithRoles() {
                     <small style="color: #666;">${signup.boothDate || 'Date TBD'}</small><br>
                     <small style="color: #666;">Status: ${signup.status}</small>
                 </div>
-                <div>
-                  <button class="btn" style="background: #007bff; padding: 5px 10px; font-size: 0.8rem; margin-right:6px;" 
-                          onclick="openSignupEditor('${signup.id}')">
-                      Edit Signup
-                  </button>
-                  <button class="btn" style="background: #dc3545; padding: 5px 10px; font-size: 0.8rem;" 
-                          onclick="cancelBoothSignupAndPersist('${signup.id}', 'parent')">
-                      Delete Signup
-                  </button>
-                </div>
+                <button class="btn" style="background: #007bff; padding: 5px 10px; font-size: 0.8rem;" 
+                        onclick="openSignupEditor('${signup.id}')">
+                    Edit Signup
+                </button>
             </div>
             <div style="margin-bottom:8px;">
-              <small style="color:#666;">Tip: remove a single role by clicking the “×” on a role badge. Use <em>Edit Signup</em> to adjust roles, or <em>Delete Signup</em> to cancel the entire signup.</small>
+              <small style="color:#666;">Tip: click “×” on a role badge to remove just that role, or use “Edit Signup” to cancel the entire signup.</small>
             </div>
             <div class="roles-display" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
                 ${(signup.roles || ['general']).map(roleKey => {
@@ -1729,7 +1723,11 @@ function displayMyBoothSignupsWithRoles() {
 async function openSignupEditor(signupId) {
     const signup = boothSignups.find(s => String(s.id) === String(signupId));
     if (!signup) { showMessage('parentBoothsMessages', 'Signup not found.', true); return; }
-    showMessage('parentBoothsMessages', 'To edit, remove specific roles with the “×” on each role badge. To change booth or girl, delete this signup and sign up again.', false);
+    const action = prompt(`Edit signup for ${signup.girlName} at ${signup.boothName || 'this booth'}.\nType "cancel" to cancel the entire signup, or press Cancel to keep it.`);
+    if (!action) return;
+    if (action.toLowerCase() === 'cancel') {
+        await cancelBoothSignupAndPersist(signupId, (currentUser && currentUser.role === 'cookie-mom') ? 'cookie-mom' : 'parent');
+    }
 }
 
 async function cancelBoothSignupAndPersist(signupId, cancelledBy='parent', reason='') {
