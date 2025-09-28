@@ -464,7 +464,6 @@ async function loadBoothSignupsFromSheets() {
         let data = rows;
         const first = data[0] || [];
         const hasHeader = String(first[0] || '').toLowerCase() === 'id';
-
         if (hasHeader) data = data.slice(1);
 
         boothSignups = data
@@ -478,14 +477,11 @@ async function loadBoothSignupsFromSheets() {
                 status: r[5] || 'confirmed',
                 notes: r[6] || '',
                 signedAt: r[7] || '',
-                roles: (() => { 
-                    try { 
-                        return JSON.parse(r[8] || '["general"]'); 
-                    } catch { 
-                        return ['general']; 
-                    } 
-                })() // Parse roles from JSON
-            }));
+                roles: (() => { try { return JSON.parse(r[8] || '["general"]'); } catch { return ['general']; } })(),
+                boothName: r[9] || '',
+                boothDate: r[10] || ''
+            }))
+            .filter(s => String(s.status).toLowerCase() !== 'cancelled');
     } catch (e) {
         console.error('Error loading Booth_Signups from sheets:', e);
         boothSignups = [];
@@ -803,6 +799,9 @@ function setupCookieMomInterface() {
     showTab('dashboard');
     updateDashboard();
     updateGirlsList();
+
+    // Ensure troop order history renders on startup
+    setTimeout(() => { if (typeof updateOrderHistory === 'function') updateOrderHistory(); }, 150);
     
     setTimeout(() => createCookieGrid('cookieOrderGrid', 'troopOrder'), 100);
     setTimeout(async () => {
@@ -987,6 +986,9 @@ function showTab(tabName) {
         updateParentOrderHistory();
     } else if (tabName === 'my-sales' && currentUser.role === 'parent') {
         updatePersonalSalesTotals();
+    }
+    else if (tabName === 'orders' && currentUser.role === 'cookie-mom') {
+        if (typeof updateOrderHistory === 'function') updateOrderHistory();
     }
     
     if (tabName === 'money' && currentUser.role === 'cookie-mom') {
@@ -1691,12 +1693,14 @@ function displayMyBoothSignupsWithRoles() {
                     <small style="color: #666;">${signup.boothDate || 'Date TBD'}</small><br>
                     <small style="color: #666;">Status: ${signup.status}</small>
                 </div>
-                <button class="btn" style="background: #dc3545; padding: 5px 10px; font-size: 0.8rem;" 
-                        onclick="cancelBoothSignup('${signup.id}')">
-                    Cancel All
+                <button class="btn" style="background: #007bff; padding: 5px 10px; font-size: 0.8rem;" 
+                        onclick="openSignupEditor('${signup.id}')">
+                    Edit Signup
                 </button>
             </div>
-            
+            <div style="margin-bottom:8px;">
+              <small style="color:#666;">Tip: click “×” on a role badge to remove just that role, or use “Edit Signup” to cancel the entire signup.</small>
+            </div>
             <div class="roles-display" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
                 ${(signup.roles || ['general']).map(roleKey => {
                     const role = BOOTH_ROLES[roleKey] || { name: roleKey, icon: '👤' };
@@ -1713,6 +1717,64 @@ function displayMyBoothSignupsWithRoles() {
             </div>
         </div>
     `).join('');
+}
+
+// --- New: Booth Signup Editor and Cancel helpers ---
+async function openSignupEditor(signupId) {
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) { showMessage('parentBoothsMessages', 'Signup not found.', true); return; }
+    const action = prompt(`Edit signup for ${signup.girlName} at ${signup.boothName || 'this booth'}.\nType "cancel" to cancel the entire signup, or press Cancel to keep it.`);
+    if (!action) return;
+    if (action.toLowerCase() === 'cancel') {
+        await cancelBoothSignupAndPersist(signupId, (currentUser && currentUser.role === 'cookie-mom') ? 'cookie-mom' : 'parent');
+    }
+}
+
+async function cancelBoothSignupAndPersist(signupId, cancelledBy='parent', reason='') {
+    const idx = boothSignups.findIndex(s => String(s.id) === String(signupId));
+    if (idx === -1) { showMessage('parentBoothsMessages', 'Signup not found.', true); return; }
+    if (!confirm('Cancel this booth signup?')) return;
+    const s = boothSignups[idx];
+    try { await deleteBoothSignupFromSheets(s.id, cancelledBy, reason); } catch (e) { console.error(e); }
+    boothSignups.splice(idx,1);
+    displayAvailableBoothsWithRoles();
+    displayMyBoothSignupsWithRoles();
+    const target = (currentUser && currentUser.role === 'parent') ? 'parentBoothsMessages' : 'boothMgmtMessages';
+    showMessage(target, 'Signup cancelled.', false);
+}
+
+async function deleteBoothSignupFromSheets(signupId, cancelledBy, reason) {
+    try {
+        const rows = await readSheet('Booth_Signups');
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        let data = rows;
+        const first = data[0] || [];
+        const hasHeader = String(first[0]||'').toLowerCase() === 'id';
+        const start = hasHeader ? 1 : 0;
+
+        let idx = -1;
+        for (let i = start; i < data.length; i++) {
+            if (String(data[i][0]) === String(signupId)) { idx = i; break; }
+        }
+        if (idx === -1) return;
+
+        const row = data[idx].slice();
+        row[5] = 'cancelled'; // status
+        const ts = new Date().toLocaleString();
+        const prev = row[6] ? String(row[6]) + ' | ' : '';
+        row[6] = `${prev}Cancelled ${ts} by ${cancelledBy}${reason ? ' - ' + reason : ''}`;
+        row[8] = '[]'; // roles cleared
+
+        const sheetRow = idx + 1;
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: SHEET_ID,
+            range: `Booth_Signups!A${sheetRow}:K${sheetRow}`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [row] }
+        });
+    } catch (e) {
+        console.error('deleteBoothSignupFromSheets error:', e);
+    }
 }
 
 async function signupForBooth(boothId) {
@@ -1816,6 +1878,109 @@ async function removeRoleFromSignup(signupId, roleKey) {
     
     const role = BOOTH_ROLES[roleKey];
     showMessage('parentBoothsMessages', `Removed ${role ? role.name : roleKey} role.`);
+}
+
+// --- Sheets helpers for booth signups ---
+async function saveBoothSignupToSheets(signup) {
+    try {
+        const values = [
+            signup.id,
+            signup.boothId,
+            signup.girlId,
+            signup.girlName || '',
+            signup.parentName || '',
+            signup.status || 'confirmed',
+            signup.notes || '',
+            signup.signedAt || new Date().toLocaleString(),
+            JSON.stringify(signup.roles || ['general']),
+            signup.boothName || '',
+            signup.boothDate || ''
+        ];
+        await appendToSheet('Booth_Signups', values);
+    } catch (e) { console.error('saveBoothSignupToSheets error:', e); }
+}
+
+async function updateBoothSignupInSheets(signup) {
+    try {
+        const rows = await readSheet('Booth_Signups');
+        if (!Array.isArray(rows) || rows.length === 0) return;
+        let data = rows;
+        const first = data[0] || [];
+        const hasHeader = String(first[0]||'').toLowerCase() === 'id';
+        const start = hasHeader ? 1 : 0;
+
+        let idx = -1;
+        for (let i = start; i < data.length; i++) {
+            if (String(data[i][0]) === String(signup.id)) { idx = i; break; }
+        }
+        if (idx === -1) return;
+
+        const sheetRow = idx + 1;
+        const values = [
+            signup.id,
+            signup.boothId,
+            signup.girlId,
+            signup.girlName || '',
+            signup.parentName || '',
+            signup.status || 'confirmed',
+            signup.notes || '',
+            signup.signedAt || '',
+            JSON.stringify(signup.roles || ['general']),
+            signup.boothName || '',
+            signup.boothDate || ''
+        ];
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: SHEET_ID,
+            range: `Booth_Signups!A${sheetRow}:K${sheetRow}`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [values] }
+        });
+    } catch (e) { console.error('updateBoothSignupInSheets error:', e); }
+}
+
+// --- Cookie Mom Booth Management View ---
+function updateBoothManagement() {
+    if (!currentUser || currentUser.role !== 'cookie-mom') return;
+    const tab = document.getElementById('booths');
+    if (!tab) return;
+    const list = boothSignups.slice().sort((a,b) => String(a.boothDate).localeCompare(String(b.boothDate)));
+    const body = list.length ? list.map(s => `
+        <div style="border:1px solid #e9ecef; border-radius:8px; padding:12px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+                <div>
+                    <strong>${s.girlName}</strong> → <strong>${s.boothName || s.boothId}</strong><br>
+                    <small style="color:#666;">${s.boothDate || 'Date TBD'}</small><br>
+                    <small style="color:#666;">Roles: ${(s.roles || []).join(', ')}</small><br>
+                    <small style="color:#666;">Parent: ${s.parentName}</small>
+                </div>
+                <div>
+                    <button class="btn" style="background:#007bff; padding:4px 8px; font-size:0.8rem; margin-right:6px;" onclick="cookieMomEditSignup('${s.id}')">Edit</button>
+                    <button class="btn" style="background:#dc3545; padding:4px 8px; font-size:0.8rem;" onclick="cookieMomCancelSignup('${s.id}')">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `).join('') : '<p style="color:#666;">No booth signups recorded.</p>';
+    tab.innerHTML = `<div class="section"><h2>Booth Management</h2><div id="boothMgmtMessages"></div>${body}</div>`;
+}
+
+async function cookieMomEditSignup(signupId) {
+    const s = boothSignups.find(x => String(x.id) === String(signupId));
+    if (!s) { showMessage('boothMgmtMessages','Signup not found.',true); return; }
+    const newRolesStr = prompt('Enter comma-separated role keys (options: ' + Object.keys(BOOTH_ROLES).join(', ') + ')\nCurrent: ' + (s.roles || []).join(', '));
+    if (newRolesStr === null) return;
+    const roles = newRolesStr.split(',').map(x => x.trim()).filter(Boolean);
+    s.roles = roles.length ? roles : ['general'];
+    try { await updateBoothSignupInSheets(s); showMessage('boothMgmtMessages','Signup updated.',false); }
+    catch(e){ console.error(e); showMessage('boothMgmtMessages','Failed to update in Sheets.',true); }
+    displayAvailableBoothsWithRoles();
+    displayMyBoothSignupsWithRoles();
+    updateBoothManagement();
+}
+
+async function cookieMomCancelSignup(signupId) {
+    const reason = prompt('Optional: reason for cancellation?') || '';
+    await cancelBoothSignupAndPersist(signupId, 'cookie-mom', reason);
+    updateBoothManagement();
 }
 
 function handleRoleSignup(event) {
