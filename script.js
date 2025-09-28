@@ -1686,40 +1686,422 @@ function displayMyBoothSignupsWithRoles() {
     }
     
     container.innerHTML = mySignups.map(signup => `
-        <div class="signup-card" style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px; background: white;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+        <div class="signup-card" style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                 <div>
-                    <strong>${signup.girlName} → ${signup.boothName}</strong><br>
-                    <small style="color: #666;">${signup.boothDate || 'Date TBD'}</small><br>
-                    <small style="color: #666;">Status: ${signup.status}</small>
+                    <strong style="color: #2c3e50;">${signup.girlName} → ${signup.boothName}</strong><br>
+                    <small style="color: #666;">${signup.boothDate || 'Date TBD'} | Status: ${signup.status}</small><br>
+                    <small style="color: #666;">Signed up: ${signup.signedAt}</small>
                 </div>
-                <button class="btn" style="background: #007bff; padding: 5px 10px; font-size: 0.8rem;" 
-                        onclick="openSignupEditor('${signup.id}')">
-                    Edit Signup
-                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" style="background: #007bff; padding: 6px 12px; font-size: 0.8rem;" 
+                            onclick="editBoothSignup('${signup.id}')">
+                        Edit
+                    </button>
+                    <button class="btn" style="background: #dc3545; padding: 6px 12px; font-size: 0.8rem;" 
+                            onclick="cancelEntireSignup('${signup.id}')">
+                        Cancel All
+                    </button>
+                </div>
             </div>
-            <div style="margin-bottom:8px;">
-              <small style="color:#666;">Tip: click “×” on a role badge to remove just that role, or use “Edit Signup” to cancel the entire signup.</small>
+            
+            <div style="margin-bottom: 10px;">
+                <strong style="color: #2c3e50;">Current Roles:</strong>
             </div>
-            <div class="roles-display" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;">
+            <div class="roles-display" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
                 ${(signup.roles || ['general']).map(roleKey => {
                     const role = BOOTH_ROLES[roleKey] || { name: roleKey, icon: '👤' };
                     return `
-                        <span class="role-badge" style="background: #e3f2fd; color: #1976d2; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; display: flex; align-items: center; gap: 3px;">
-                            ${role.icon} ${role.name}
-                            <button onclick="removeRoleFromSignup('${signup.id}', '${roleKey}')" 
-                                    style="background: none; border: none; color: #d32f2f; margin-left: 3px; cursor: pointer; font-size: 0.7rem;">
-                                ×
-                            </button>
-                        </span>
+                        <div class="role-badge" style="background: #e3f2fd; color: #1976d2; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; border: 1px solid #bbdefb;">
+                            <span>${role.icon} ${role.name}</span>
+                            ${signup.roles.length > 1 ? `
+                                <button onclick="removeSpecificRole('${signup.id}', '${roleKey}')" 
+                                        style="background: none; border: none; color: #d32f2f; margin-left: 6px; cursor: pointer; font-size: 0.8rem; padding: 2px;"
+                                        title="Remove this role only">
+                                    ×
+                                </button>
+                            ` : ''}
+                        </div>
                     `;
                 }).join('')}
             </div>
+            
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                <strong style="font-size: 0.9rem; color: #2c3e50;">Add Additional Role:</strong>
+                <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                    <select class="additional-role-select" data-signup-id="${signup.id}" 
+                            style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
+                        <option value="">Select role to add...</option>
+                        ${Object.keys(BOOTH_ROLES).filter(roleKey => !signup.roles.includes(roleKey)).map(roleKey => {
+                            const role = BOOTH_ROLES[roleKey];
+                            const signupCounts = getBoothSignupCounts(signup.boothId);
+                            const currentCount = signupCounts[roleKey] || 0;
+                            const isAvailable = currentCount < role.maxCapacity;
+                            
+                            return `<option value="${roleKey}" ${!isAvailable ? 'disabled' : ''}>
+                                ${role.icon} ${role.name} (${currentCount}/${role.maxCapacity})
+                            </option>`;
+                        }).join('')}
+                    </select>
+                    <button class="btn" style="background: #28a745; padding: 6px 12px; font-size: 0.8rem;" 
+                            onclick="addRoleToExistingSignup('${signup.id}')">
+                        Add Role
+                    </button>
+                </div>
+            </div>
+            
+            ${signup.notes ? `
+                <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                    <small><strong>Notes:</strong> ${signup.notes}</small>
+                </div>
+            ` : ''}
         </div>
     `).join('');
 }
 
+
 // --- New: Booth Signup Editor and Cancel helpers ---
+// New function to edit booth signup
+async function editBoothSignup(signupId) {
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) {
+        showMessage('parentBoothsMessages', 'Signup not found.', true);
+        return;
+    }
+    
+    const booth = booths.find(b => b.id == signup.boothId);
+    if (!booth) {
+        showMessage('parentBoothsMessages', 'Booth not found.', true);
+        return;
+    }
+    
+    // Create modal for editing
+    const modalContent = `
+        <div style="max-width: 500px;">
+            <h3>Edit Booth Signup</h3>
+            <p><strong>Girl:</strong> ${signup.girlName}</p>
+            <p><strong>Booth:</strong> ${signup.boothName}</p>
+            <p><strong>Date:</strong> ${signup.boothDate}</p>
+            <br>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: bold; margin-bottom: 8px; display: block;">Current Roles:</label>
+                <div id="currentRoles" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+                    ${(signup.roles || []).map(roleKey => {
+                        const role = BOOTH_ROLES[roleKey] || { name: roleKey, icon: '👤' };
+                        return `
+                            <div class="role-badge" style="background: #e3f2fd; color: #1976d2; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                                <span>${role.icon} ${role.name}</span>
+                                <button onclick="removeRoleFromModal('${roleKey}')" 
+                                        style="background: none; border: none; color: #d32f2f; margin-left: 6px; cursor: pointer; font-size: 0.8rem;"
+                                        title="Remove role">
+                                    ×
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: bold; margin-bottom: 8px; display: block;">Add Role:</label>
+                <select id="modalRoleSelect" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">Select role to add...</option>
+                    ${Object.keys(BOOTH_ROLES).filter(roleKey => !signup.roles.includes(roleKey)).map(roleKey => {
+                        const role = BOOTH_ROLES[roleKey];
+                        const signupCounts = getBoothSignupCounts(signup.boothId);
+                        const currentCount = signupCounts[roleKey] || 0;
+                        const isAvailable = currentCount < role.maxCapacity;
+                        
+                        return `<option value="${roleKey}" ${!isAvailable ? 'disabled' : ''}>
+                            ${role.icon} ${role.name} (${currentCount}/${role.maxCapacity} ${!isAvailable ? '- FULL' : ''})
+                        </option>`;
+                    }).join('')}
+                </select>
+                <button onclick="addRoleInModal()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-top: 8px; cursor: pointer;">
+                    Add Role
+                </button>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; margin-bottom: 8px; display: block;">Notes:</label>
+                <textarea id="modalNotes" style="width: 100%; height: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" 
+                          placeholder="Optional notes...">${signup.notes || ''}</textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeEditModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    Cancel
+                </button>
+                <button onclick="saveSignupChanges('${signupId}')" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    `;
+    
+    showModal('Edit Booth Signup', modalContent);
+    
+    // Store original roles for modal manipulation
+    window.modalRoles = [...(signup.roles || [])];
+}
+
+// Helper functions for modal role management
+window.removeRoleFromModal = function(roleKey) {
+    window.modalRoles = window.modalRoles.filter(r => r !== roleKey);
+    updateModalRoleDisplay();
+};
+
+window.addRoleInModal = function() {
+    const select = document.getElementById('modalRoleSelect');
+    const roleKey = select.value;
+    if (roleKey && !window.modalRoles.includes(roleKey)) {
+        window.modalRoles.push(roleKey);
+        updateModalRoleDisplay();
+        select.value = '';
+    }
+};
+
+function updateModalRoleDisplay() {
+    const container = document.getElementById('currentRoles');
+    if (!container) return;
+    
+    container.innerHTML = window.modalRoles.map(roleKey => {
+        const role = BOOTH_ROLES[roleKey] || { name: roleKey, icon: '👤' };
+        return `
+            <div class="role-badge" style="background: #e3f2fd; color: #1976d2; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                <span>${role.icon} ${role.name}</span>
+                <button onclick="removeRoleFromModal('${roleKey}')" 
+                        style="background: none; border: none; color: #d32f2f; margin-left: 6px; cursor: pointer; font-size: 0.8rem;"
+                        title="Remove role">
+                    ×
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    // Update the role select options
+    const select = document.getElementById('modalRoleSelect');
+    if (select) {
+        const currentSignup = boothSignups.find(s => window.modalRoles === s.roles);
+        const boothId = currentSignup ? currentSignup.boothId : null;
+        
+        select.innerHTML = `
+            <option value="">Select role to add...</option>
+            ${Object.keys(BOOTH_ROLES).filter(roleKey => !window.modalRoles.includes(roleKey)).map(roleKey => {
+                const role = BOOTH_ROLES[roleKey];
+                let isAvailable = true;
+                if (boothId) {
+                    const signupCounts = getBoothSignupCounts(boothId);
+                    const currentCount = signupCounts[roleKey] || 0;
+                    isAvailable = currentCount < role.maxCapacity;
+                }
+                
+                return `<option value="${roleKey}" ${!isAvailable ? 'disabled' : ''}>
+                    ${role.icon} ${role.name} ${!isAvailable ? '(FULL)' : ''}
+                </option>`;
+            }).join('')}
+        `;
+    }
+}
+
+// Save changes from modal
+async function saveSignupChanges(signupId) {
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) {
+        alert('Signup not found');
+        return;
+    }
+    
+    if (window.modalRoles.length === 0) {
+        alert('At least one role must be selected');
+        return;
+    }
+    
+    showLoading('Saving changes...');
+    
+    try {
+        // Update signup
+        signup.roles = [...window.modalRoles];
+        signup.notes = document.getElementById('modalNotes').value.trim();
+        signup.lastModified = new Date().toLocaleString();
+        
+        // Update in sheets
+        await updateBoothSignupInSheets(signup);
+        
+        // Refresh displays
+        displayMyBoothSignupsWithRoles();
+        displayAvailableBoothsWithRoles();
+        
+        // If current user is cookie mom, update their view too
+        if (currentUser && currentUser.role === 'cookie-mom') {
+            updateBoothManagement();
+        }
+        
+        closeEditModal();
+        showMessage('parentBoothsMessages', 'Signup updated successfully!');
+        
+    } catch (error) {
+        console.error('Error saving signup changes:', error);
+        showMessage('parentBoothsMessages', 'Error saving changes. Please try again.', true);
+    } finally {
+        hideLoading();
+    }
+}
+
+window.closeEditModal = function() {
+    closeApprovalModal(); // Reuse existing modal close function
+    window.modalRoles = null;
+};
+
+// Remove specific role from signup
+async function removeSpecificRole(signupId, roleKey) {
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) return;
+    
+    if (signup.roles.length <= 1) {
+        if (confirm('This is the last role. Removing it will cancel the entire signup. Continue?')) {
+            await cancelEntireSignup(signupId);
+        }
+        return;
+    }
+    
+    if (!confirm(`Remove ${BOOTH_ROLES[roleKey]?.name || roleKey} role from this signup?`)) {
+        return;
+    }
+    
+    showLoading('Updating signup...');
+    
+    try {
+        // Remove role
+        signup.roles = signup.roles.filter(r => r !== roleKey);
+        signup.lastModified = new Date().toLocaleString();
+        
+        // Update in sheets
+        await updateBoothSignupInSheets(signup);
+        
+        // Refresh displays
+        displayMyBoothSignupsWithRoles();
+        displayAvailableBoothsWithRoles();
+        
+        // Update cookie mom view if applicable
+        if (currentUser && currentUser.role === 'cookie-mom') {
+            updateBoothManagement();
+        }
+        
+        const role = BOOTH_ROLES[roleKey];
+        showMessage('parentBoothsMessages', `Removed ${role ? role.name : roleKey} role successfully.`);
+        
+    } catch (error) {
+        console.error('Error removing role:', error);
+        showMessage('parentBoothsMessages', 'Error removing role. Please try again.', true);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Add role to existing signup
+async function addRoleToExistingSignup(signupId) {
+    const select = document.querySelector(`select[data-signup-id="${signupId}"]`);
+    if (!select) return;
+    
+    const roleKey = select.value;
+    if (!roleKey) {
+        showMessage('parentBoothsMessages', 'Please select a role to add.', true);
+        return;
+    }
+    
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) return;
+    
+    if (signup.roles.includes(roleKey)) {
+        showMessage('parentBoothsMessages', 'Role already assigned.', true);
+        return;
+    }
+    
+    // Check if role is still available
+    const signupCounts = getBoothSignupCounts(signup.boothId);
+    const role = BOOTH_ROLES[roleKey];
+    const currentCount = signupCounts[roleKey] || 0;
+    
+    if (currentCount >= role.maxCapacity) {
+        showMessage('parentBoothsMessages', `${role.name} role is now full.`, true);
+        return;
+    }
+    
+    showLoading('Adding role...');
+    
+    try {
+        // Add role
+        signup.roles.push(roleKey);
+        signup.lastModified = new Date().toLocaleString();
+        
+        // Update in sheets
+        await updateBoothSignupInSheets(signup);
+        
+        // Refresh displays
+        displayMyBoothSignupsWithRoles();
+        displayAvailableBoothsWithRoles();
+        
+        // Update cookie mom view if applicable
+        if (currentUser && currentUser.role === 'cookie-mom') {
+            updateBoothManagement();
+        }
+        
+        showMessage('parentBoothsMessages', `Added ${role.name} role successfully!`);
+        
+    } catch (error) {
+        console.error('Error adding role:', error);
+        showMessage('parentBoothsMessages', 'Error adding role. Please try again.', true);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Cancel entire signup
+async function cancelEntireSignup(signupId) {
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) return;
+    
+    if (!confirm(`Cancel ${signup.girlName}'s entire signup for ${signup.boothName}? This cannot be undone.`)) {
+        return;
+    }
+    
+    showLoading('Cancelling signup...');
+    
+    try {
+        // Mark as cancelled in sheets first (for audit trail)
+        signup.status = 'cancelled';
+        signup.cancelledAt = new Date().toLocaleString();
+        signup.cancelledBy = currentUser ? currentUser.name : 'Parent';
+        
+        await updateBoothSignupInSheets(signup);
+        
+        // Remove from local array
+        const index = boothSignups.findIndex(s => String(s.id) === String(signupId));
+        if (index > -1) {
+            boothSignups.splice(index, 1);
+        }
+        
+        // Refresh displays
+        displayMyBoothSignupsWithRoles();
+        displayAvailableBoothsWithRoles();
+        
+        // Update cookie mom view if applicable
+        if (currentUser && currentUser.role === 'cookie-mom') {
+            updateBoothManagement();
+        }
+        
+        showMessage('parentBoothsMessages', `${signup.girlName}'s signup for ${signup.boothName} has been cancelled.`);
+        
+    } catch (error) {
+        console.error('Error cancelling signup:', error);
+        showMessage('parentBoothsMessages', 'Error cancelling signup. Please try again.', true);
+    } finally {
+        hideLoading();
+    }
+}
+
 async function openSignupEditor(signupId) {
     const signup = boothSignups.find(s => String(s.id) === String(signupId));
     if (!signup) { showMessage('parentBoothsMessages', 'Signup not found.', true); return; }
@@ -1939,48 +2321,203 @@ async function updateBoothSignupInSheets(signup) {
 }
 
 // --- Cookie Mom Booth Management View ---
+// Enhanced Cookie Mom booth management with better role tracking
 function updateBoothManagement() {
     if (!currentUser || currentUser.role !== 'cookie-mom') return;
-    const tab = document.getElementById('booths');
-    if (!tab) return;
-    const list = boothSignups.slice().sort((a,b) => String(a.boothDate).localeCompare(String(b.boothDate)));
-    const body = list.length ? list.map(s => `
-        <div style="border:1px solid #e9ecef; border-radius:8px; padding:12px; margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <div>
-                    <strong>${s.girlName}</strong> → <strong>${s.boothName || s.boothId}</strong><br>
-                    <small style="color:#666;">${s.boothDate || 'Date TBD'}</small><br>
-                    <small style="color:#666;">Roles: ${(s.roles || []).join(', ')}</small><br>
-                    <small style="color:#666;">Parent: ${s.parentName}</small>
+    
+    const boothTab = document.getElementById('booths');
+    if (!boothTab) return;
+    
+    const allSignups = boothSignups.slice().sort((a, b) => 
+        String(a.boothDate || '').localeCompare(String(b.boothDate || ''))
+    );
+    
+    let managementContent = `
+        <div class="section">
+            <h2>Create New Booth</h2>
+            <div id="boothMessages"></div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Booth Name/Location:</label>
+                    <input type="text" id="boothName" class="form-control" placeholder="Walmart - Main Street">
                 </div>
-                <div>
-                    <button class="btn" style="background:#007bff; padding:4px 8px; font-size:0.8rem; margin-right:6px;" onclick="cookieMomEditSignup('${s.id}')">Edit</button>
-                    <button class="btn" style="background:#dc3545; padding:4px 8px; font-size:0.8rem;" onclick="cookieMomCancelSignup('${s.id}')">Cancel</button>
+                <div class="form-group">
+                    <label>Date:</label>
+                    <input type="date" id="boothDate" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Start Time:</label>
+                    <input type="time" id="boothStartTime" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>End Time:</label>
+                    <input type="time" id="boothEndTime" class="form-control">
                 </div>
             </div>
+            
+            <button class="btn" onclick="createBooth()">Schedule Booth</button>
         </div>
-    `).join('') : '<p style="color:#666;">No booth signups recorded.</p>';
-    tab.innerHTML = `<div class="section"><h2>Booth Management</h2><div id="boothMgmtMessages"></div>${body}</div>`;
+        
+        <div class="section">
+            <h2>Booth Signups Management</h2>
+            <div id="boothMgmtMessages"></div>
+    `;
+    
+    if (allSignups.length === 0) {
+        managementContent += '<p style="color: #666;">No booth signups recorded.</p>';
+    } else {
+        managementContent += allSignups.map(signup => {
+            const booth = booths.find(b => b.id == signup.boothId);
+            const rolesList = (signup.roles || ['general']).map(roleKey => {
+                const role = BOOTH_ROLES[roleKey] || { name: roleKey, icon: '👤' };
+                return `${role.icon} ${role.name}`;
+            }).join(', ');
+            
+            return `
+                <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px; background: white;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong style="color: #2c3e50;">${signup.girlName} → ${signup.boothName || booth?.name || 'Unknown Booth'}</strong><br>
+                            <small style="color: #666;">Date: ${signup.boothDate || booth?.date || 'TBD'}</small><br>
+                            <small style="color: #666;">Parent: ${signup.parentName}</small><br>
+                            <small style="color: #666;">Roles: ${rolesList}</small><br>
+                            <small style="color: #999;">Signed up: ${signup.signedAt}</small>
+                            ${signup.lastModified ? `<br><small style="color: #999;">Last modified: ${signup.lastModified}</small>` : ''}
+                            ${signup.notes ? `<br><small style="color: #666;"><strong>Notes:</strong> ${signup.notes}</small>` : ''}
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn" style="background: #007bff; padding: 6px 12px; font-size: 0.8rem;" 
+                                    onclick="cookieMomEditSignup('${signup.id}')">
+                                Edit
+                            </button>
+                            <button class="btn" style="background: #dc3545; padding: 6px 12px; font-size: 0.8rem;" 
+                                    onclick="cookieMomCancelSignup('${signup.id}')">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    managementContent += `
+        </div>
+        
+        <div class="section">
+            <h2>Scheduled Booths</h2>
+            <div id="boothListDisplay">
+                <p style="color: #666; text-align: center; padding: 20px;">Loading booths...</p>
+            </div>
+        </div>
+    `;
+    
+    boothTab.innerHTML = managementContent;
+    
+    // Update the booth display
+    updateBoothDisplay();
 }
 
+// Enhanced Cookie Mom edit function
 async function cookieMomEditSignup(signupId) {
-    const s = boothSignups.find(x => String(x.id) === String(signupId));
-    if (!s) { showMessage('boothMgmtMessages','Signup not found.',true); return; }
-    const newRolesStr = prompt('Enter comma-separated role keys (options: ' + Object.keys(BOOTH_ROLES).join(', ') + ')\nCurrent: ' + (s.roles || []).join(', '));
-    if (newRolesStr === null) return;
-    const roles = newRolesStr.split(',').map(x => x.trim()).filter(Boolean);
-    s.roles = roles.length ? roles : ['general'];
-    try { await updateBoothSignupInSheets(s); showMessage('boothMgmtMessages','Signup updated.',false); }
-    catch(e){ console.error(e); showMessage('boothMgmtMessages','Failed to update in Sheets.',true); }
-    displayAvailableBoothsWithRoles();
-    displayMyBoothSignupsWithRoles();
-    updateBoothManagement();
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) {
+        showMessage('boothMgmtMessages', 'Signup not found.', true);
+        return;
+    }
+    
+    const availableRoles = Object.keys(BOOTH_ROLES);
+    const currentRolesStr = (signup.roles || []).join(', ');
+    
+    const newRolesInput = prompt(
+        `Edit roles for ${signup.girlName} at ${signup.boothName}:\n\n` +
+        `Current roles: ${currentRolesStr}\n\n` +
+        `Available role keys: ${availableRoles.join(', ')}\n\n` +
+        `Enter comma-separated role keys:`, 
+        currentRolesStr
+    );
+    
+    if (newRolesInput === null) return; // User cancelled
+    
+    const newRoles = newRolesInput.split(',')
+        .map(r => r.trim())
+        .filter(Boolean);
+    
+    if (newRoles.length === 0) {
+        if (confirm('No roles specified. This will cancel the entire signup. Continue?')) {
+            await cookieMomCancelSignup(signupId);
+        }
+        return;
+    }
+    
+    // Validate roles
+    const invalidRoles = newRoles.filter(r => !BOOTH_ROLES[r]);
+    if (invalidRoles.length > 0) {
+        showMessage('boothMgmtMessages', `Invalid role keys: ${invalidRoles.join(', ')}`, true);
+        return;
+    }
+    
+    showLoading('Updating signup...');
+    
+    try {
+        signup.roles = newRoles;
+        signup.lastModified = new Date().toLocaleString();
+        signup.lastModifiedBy = currentUser.name;
+        
+        await updateBoothSignupInSheets(signup);
+        
+        updateBoothManagement();
+        displayAvailableBoothsWithRoles();
+        displayMyBoothSignupsWithRoles();
+        
+        showMessage('boothMgmtMessages', 'Signup updated successfully.');
+        
+    } catch (error) {
+        console.error('Error updating signup:', error);
+        showMessage('boothMgmtMessages', 'Failed to update signup.', true);
+    } finally {
+        hideLoading();
+    }
 }
 
+// Enhanced Cookie Mom cancel function
 async function cookieMomCancelSignup(signupId) {
-    const reason = prompt('Optional: reason for cancellation?') || '';
-    await cancelBoothSignupAndPersist(signupId, 'cookie-mom', reason);
-    updateBoothManagement();
+    const signup = boothSignups.find(s => String(s.id) === String(signupId));
+    if (!signup) return;
+    
+    const reason = prompt(`Cancel ${signup.girlName}'s signup for ${signup.boothName}?\n\nOptional reason:`) || '';
+    if (reason === null) return; // User cancelled prompt
+    
+    showLoading('Cancelling signup...');
+    
+    try {
+        // Mark as cancelled with reason
+        signup.status = 'cancelled';
+        signup.cancelledAt = new Date().toLocaleString();
+        signup.cancelledBy = currentUser.name;
+        signup.cancellationReason = reason;
+        
+        await updateBoothSignupInSheets(signup);
+        
+        // Remove from local array
+        const index = boothSignups.findIndex(s => String(s.id) === String(signupId));
+        if (index > -1) {
+            boothSignups.splice(index, 1);
+        }
+        
+        updateBoothManagement();
+        displayAvailableBoothsWithRoles();
+        displayMyBoothSignupsWithRoles();
+        
+        showMessage('boothMgmtMessages', `${signup.girlName}'s signup cancelled.`);
+        
+    } catch (error) {
+        console.error('Error cancelling signup:', error);
+        showMessage('boothMgmtMessages', 'Failed to cancel signup.', true);
+    } finally {
+        hideLoading();
+    }
 }
 
 function handleRoleSignup(event) {
