@@ -1954,47 +1954,39 @@ window.closeEditModal = function() {
     window.modalRoles = null;
 };
 
-// Remove specific role from signup
+// Remove specific role from signup (automatically cancels if last role)
 async function removeSpecificRole(signupId, roleKey) {
     const signup = boothSignups.find(s => String(s.id) === String(signupId));
     if (!signup) return;
     
+    // If this is the last role, cancel entire signup
     if (signup.roles.length <= 1) {
-        if (confirm('This is the last role. Removing it will cancel the entire signup. Continue?')) {
-            await cancelEntireSignup(signupId);
-        }
+        await cancelEntireSignup(signupId);
         return;
     }
     
-    if (!confirm(`Remove ${BOOTH_ROLES[roleKey]?.name || roleKey} role from this signup?`)) {
-        return;
-    }
-    
-    showLoading('Updating signup...');
+    showLoading('Removing role...');
     
     try {
-        // Remove role
+        // Remove the specific role
         signup.roles = signup.roles.filter(r => r !== roleKey);
         signup.lastModified = new Date().toLocaleString();
+        signup.lastModifiedBy = currentUser ? currentUser.name : 'System';
         
         // Update in sheets
         await updateBoothSignupInSheets(signup);
         
-        // Refresh displays
-        displayMyBoothSignupsWithRoles();
-        displayAvailableBoothsWithRoles();
-        
-        // Update cookie mom view if applicable
-        if (currentUser && currentUser.role === 'cookie-mom') {
-            updateBoothManagement();
-        }
+        // Refresh all displays
+        refreshAllBoothDisplays();
         
         const role = BOOTH_ROLES[roleKey];
-        showMessage('parentBoothsMessages', `Removed ${role ? role.name : roleKey} role successfully.`);
+        const messageTarget = (currentUser && currentUser.role === 'cookie-mom') ? 'boothMgmtMessages' : 'parentBoothsMessages';
+        showMessage(messageTarget, `Removed ${role ? role.name : roleKey} role successfully.`);
         
     } catch (error) {
         console.error('Error removing role:', error);
-        showMessage('parentBoothsMessages', 'Error removing role. Please try again.', true);
+        const messageTarget = (currentUser && currentUser.role === 'cookie-mom') ? 'boothMgmtMessages' : 'parentBoothsMessages';
+        showMessage(messageTarget, 'Error removing role. Please try again.', true);
     } finally {
         hideLoading();
     }
@@ -2058,22 +2050,19 @@ async function addRoleToExistingSignup(signupId) {
     }
 }
 
-// Cancel entire signup
+// Consolidated cancel function - works for both parents and cookie mom
 async function cancelEntireSignup(signupId) {
     const signup = boothSignups.find(s => String(s.id) === String(signupId));
     if (!signup) return;
     
-    if (!confirm(`Cancel ${signup.girlName}'s entire signup for ${signup.boothName}? This cannot be undone.`)) {
-        return;
-    }
-    
     showLoading('Cancelling signup...');
     
     try {
-        // Mark as cancelled in sheets first (for audit trail)
+        // Mark as cancelled in sheets (for audit trail)
         signup.status = 'cancelled';
         signup.cancelledAt = new Date().toLocaleString();
-        signup.cancelledBy = currentUser ? currentUser.name : 'Parent';
+        signup.cancelledBy = currentUser ? currentUser.name : 'System';
+        signup.cancellationReason = 'All roles removed';
         
         await updateBoothSignupInSheets(signup);
         
@@ -2083,22 +2072,34 @@ async function cancelEntireSignup(signupId) {
             boothSignups.splice(index, 1);
         }
         
-        // Refresh displays
-        displayMyBoothSignupsWithRoles();
-        displayAvailableBoothsWithRoles();
+        // Refresh all displays immediately
+        refreshAllBoothDisplays();
         
-        // Update cookie mom view if applicable
-        if (currentUser && currentUser.role === 'cookie-mom') {
-            updateBoothManagement();
-        }
-        
-        showMessage('parentBoothsMessages', `${signup.girlName}'s signup for ${signup.boothName} has been cancelled.`);
+        const messageTarget = (currentUser && currentUser.role === 'cookie-mom') ? 'boothMgmtMessages' : 'parentBoothsMessages';
+        showMessage(messageTarget, `${signup.girlName}'s signup cancelled.`);
         
     } catch (error) {
         console.error('Error cancelling signup:', error);
-        showMessage('parentBoothsMessages', 'Error cancelling signup. Please try again.', true);
+        const messageTarget = (currentUser && currentUser.role === 'cookie-mom') ? 'boothMgmtMessages' : 'parentBoothsMessages';
+        showMessage(messageTarget, 'Error cancelling signup. Please try again.', true);
     } finally {
         hideLoading();
+    }
+}
+
+// Helper function to refresh all booth displays
+function refreshAllBoothDisplays() {
+    // Refresh parent displays if available
+    if (typeof displayMyBoothSignupsWithRoles === 'function') {
+        displayMyBoothSignupsWithRoles();
+    }
+    if (typeof displayAvailableBoothsWithRoles === 'function') {
+        displayAvailableBoothsWithRoles();
+    }
+    
+    // Refresh cookie mom display if user is cookie mom
+    if (currentUser && currentUser.role === 'cookie-mom' && typeof updateBoothManagement === 'function') {
+        updateBoothManagement();
     }
 }
 
@@ -2210,16 +2211,6 @@ async function signupForBooth(boothId) {
     }
 }
 
-async function cancelBoothSignup(signupId) {
-    if (!confirm('Cancel this booth signup?')) return;
-    
-    const index = boothSignups.findIndex(s => s.id == signupId);
-    if (index > -1) {
-        boothSignups.splice(index, 1);
-        displayMyBoothSignupsWithRoles();
-        showMessage('parentBoothsMessages', 'Signup cancelled.');
-    }
-}
 
 function getBoothSignupCounts(boothId) {
     const signups = boothSignups.filter(s => s.boothId == boothId);
@@ -2238,29 +2229,6 @@ function getTotalSignupCount(boothId) {
     return boothSignups.filter(s => s.boothId == boothId).length;
 }
 
-async function removeRoleFromSignup(signupId, roleKey) {
-    const signup = boothSignups.find(s => s.id == signupId);
-    if (!signup) return;
-    
-    // Remove role from array
-    signup.roles = (signup.roles || []).filter(r => r !== roleKey);
-    
-    // If no roles left, remove entire signup
-    if (signup.roles.length === 0) {
-        await cancelBoothSignup(signupId);
-        return;
-    }
-    
-    // Update signup in sheets
-    await updateBoothSignupInSheets(signup);
-    
-    // Refresh displays
-    displayAvailableBoothsWithRoles();
-    displayMyBoothSignupsWithRoles();
-    
-    const role = BOOTH_ROLES[roleKey];
-    showMessage('parentBoothsMessages', `Removed ${role ? role.name : roleKey} role.`);
-}
 
 // --- Sheets helpers for booth signups ---
 async function saveBoothSignupToSheets(signup) {
@@ -2295,7 +2263,11 @@ async function updateBoothSignupInSheets(signup) {
         for (let i = start; i < data.length; i++) {
             if (String(data[i][0]) === String(signup.id)) { idx = i; break; }
         }
-        if (idx === -1) return;
+        if (idx === -1) {
+            // If not found, add as new signup
+            await saveBoothSignupToSheets(signup);
+            return;
+        }
 
         const sheetRow = idx + 1;
         const values = [
@@ -2317,7 +2289,9 @@ async function updateBoothSignupInSheets(signup) {
             valueInputOption: 'USER_ENTERED',
             resource: { values: [values] }
         });
-    } catch (e) { console.error('updateBoothSignupInSheets error:', e); }
+    } catch (e) { 
+        console.error('updateBoothSignupInSheets error:', e); 
+    }
 }
 
 // --- Cookie Mom Booth Management View ---
@@ -2419,7 +2393,8 @@ function updateBoothManagement() {
     updateBoothDisplay();
 }
 
-// Enhanced Cookie Mom edit function
+
+// Enhanced Cookie Mom edit function - now works properly
 async function cookieMomEditSignup(signupId) {
     const signup = boothSignups.find(s => String(s.id) === String(signupId));
     if (!signup) {
@@ -2427,34 +2402,42 @@ async function cookieMomEditSignup(signupId) {
         return;
     }
     
+    // Create a better edit interface
     const availableRoles = Object.keys(BOOTH_ROLES);
+    const roleOptions = availableRoles.map(roleKey => {
+        const role = BOOTH_ROLES[roleKey];
+        const isSelected = (signup.roles || []).includes(roleKey);
+        return `${roleKey} (${role.name})${isSelected ? ' ✓' : ''}`;
+    }).join('\n');
+    
     const currentRolesStr = (signup.roles || []).join(', ');
     
     const newRolesInput = prompt(
-        `Edit roles for ${signup.girlName} at ${signup.boothName}:\n\n` +
+        `EDIT SIGNUP FOR: ${signup.girlName} at ${signup.boothName}\n\n` +
         `Current roles: ${currentRolesStr}\n\n` +
-        `Available role keys: ${availableRoles.join(', ')}\n\n` +
-        `Enter comma-separated role keys:`, 
+        `Available roles:\n${roleOptions}\n\n` +
+        `Enter new comma-separated role keys (e.g., money-handler,setup):`, 
         currentRolesStr
     );
     
     if (newRolesInput === null) return; // User cancelled
     
-    const newRoles = newRolesInput.split(',')
-        .map(r => r.trim())
-        .filter(Boolean);
-    
-    if (newRoles.length === 0) {
+    // Allow empty input to cancel signup
+    if (newRolesInput.trim() === '') {
         if (confirm('No roles specified. This will cancel the entire signup. Continue?')) {
-            await cookieMomCancelSignup(signupId);
+            await cancelEntireSignup(signupId); // Use consolidated function
         }
         return;
     }
     
+    const newRoles = newRolesInput.split(',')
+        .map(r => r.trim())
+        .filter(Boolean);
+    
     // Validate roles
     const invalidRoles = newRoles.filter(r => !BOOTH_ROLES[r]);
     if (invalidRoles.length > 0) {
-        showMessage('boothMgmtMessages', `Invalid role keys: ${invalidRoles.join(', ')}`, true);
+        showMessage('boothMgmtMessages', `Invalid role keys: ${invalidRoles.join(', ')}\n\nValid keys: ${availableRoles.join(', ')}`, true);
         return;
     }
     
@@ -2467,56 +2450,27 @@ async function cookieMomEditSignup(signupId) {
         
         await updateBoothSignupInSheets(signup);
         
-        updateBoothManagement();
-        displayAvailableBoothsWithRoles();
-        displayMyBoothSignupsWithRoles();
+        // Use consolidated refresh function
+        refreshAllBoothDisplays();
         
-        showMessage('boothMgmtMessages', 'Signup updated successfully.');
+        showMessage('boothMgmtMessages', `Updated ${signup.girlName}'s roles to: ${newRoles.join(', ')}`);
         
     } catch (error) {
         console.error('Error updating signup:', error);
-        showMessage('boothMgmtMessages', 'Failed to update signup.', true);
+        showMessage('boothMgmtMessages', 'Failed to update signup: ' + error.message, true);
     } finally {
         hideLoading();
     }
 }
 
-// Enhanced Cookie Mom cancel function
+// Cookie Mom cancel - uses consolidated function
 async function cookieMomCancelSignup(signupId) {
     const signup = boothSignups.find(s => String(s.id) === String(signupId));
     if (!signup) return;
     
-    const reason = prompt(`Cancel ${signup.girlName}'s signup for ${signup.boothName}?\n\nOptional reason:`) || '';
-    if (reason === null) return; // User cancelled prompt
-    
-    showLoading('Cancelling signup...');
-    
-    try {
-        // Mark as cancelled with reason
-        signup.status = 'cancelled';
-        signup.cancelledAt = new Date().toLocaleString();
-        signup.cancelledBy = currentUser.name;
-        signup.cancellationReason = reason;
-        
-        await updateBoothSignupInSheets(signup);
-        
-        // Remove from local array
-        const index = boothSignups.findIndex(s => String(s.id) === String(signupId));
-        if (index > -1) {
-            boothSignups.splice(index, 1);
-        }
-        
-        updateBoothManagement();
-        displayAvailableBoothsWithRoles();
-        displayMyBoothSignupsWithRoles();
-        
-        showMessage('boothMgmtMessages', `${signup.girlName}'s signup cancelled.`);
-        
-    } catch (error) {
-        console.error('Error cancelling signup:', error);
-        showMessage('boothMgmtMessages', 'Failed to cancel signup.', true);
-    } finally {
-        hideLoading();
+    // Optional: Add a simple confirmation for cookie mom
+    if (confirm(`Cancel ${signup.girlName}'s signup for ${signup.boothName}?`)) {
+        await cancelEntireSignup(signupId);
     }
 }
 
