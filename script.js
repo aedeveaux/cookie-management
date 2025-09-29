@@ -3378,40 +3378,76 @@ async function editSignup(signupId) {
     const booth = booths.find(b => b.id == signup.boothId);
     const signupCounts = getBoothSignupCounts(booth.id);
     
-    // Build list of available roles
-    const roleOptions = Object.keys(BOOTH_ROLES)
+    // Build dropdown options for available roles
+    const roleOptionsHtml = Object.keys(BOOTH_ROLES)
         .map(key => {
             const role = BOOTH_ROLES[key];
             const count = signupCounts[key] || 0;
-            // Role is available if it's not full OR it's the current role
             const available = count < role.maxCapacity || key === signup.role;
-            return available ? `${key}: ${role.name}` : null;
+            const isCurrentRole = key === signup.role;
+            
+            if (!available) return '';
+            
+            return `<option value="${key}" ${isCurrentRole ? 'selected' : ''}>
+                ${role.icon} ${role.name} (${count}/${role.maxCapacity})
+            </option>`;
         })
         .filter(Boolean)
-        .join('\n');
+        .join('');
     
-    const newRole = prompt(
-        `Current role: ${signup.role}\n\nAvailable roles:\n${roleOptions}\n\nEnter new role key:`,
-        signup.role
-    );
+    // Create modal with dropdown
+    const modalContent = `
+        <div style="max-width: 400px;">
+            <h3>Edit Booth Signup</h3>
+            <p><strong>Girl:</strong> ${signup.girlName}</p>
+            <p><strong>Booth:</strong> ${signup.boothName}</p>
+            <p><strong>Date:</strong> ${signup.boothDate}</p>
+            <br>
+            
+            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Select New Role:</label>
+            <select id="editRoleSelect" class="form-control" style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                ${roleOptionsHtml}
+            </select>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeEditModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    Cancel
+                </button>
+                <button onclick="saveEditedRole(${signupId})" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    `;
     
-    if (!newRole || newRole === signup.role) return;
+    showModal('Edit Booth Signup', modalContent);
+}
+
+// Helper to close edit modal
+window.closeEditModal = function() {
+    closeApprovalModal(); // Reuse existing modal close function
+};
+
+// Save the edited role
+window.saveEditedRole = async function(signupId) {
+    const newRole = document.getElementById('editRoleSelect').value;
+    if (!newRole) return;
     
-    // Validate new role exists
-    if (!BOOTH_ROLES[newRole]) {
-        alert('Invalid role key. Please use one of the keys shown.');
+    const signup = boothSignups.find(s => s.id == signupId);
+    if (!signup || newRole === signup.role) {
+        closeEditModal();
         return;
     }
     
     showLoading('Updating signup...');
     
     try {
-        // Update signup
         signup.role = newRole;
         signup.lastModified = new Date().toLocaleString();
         
         await updateBoothSignupInSheets(signup);
         
+        closeEditModal();
         refreshAllBoothDisplays();
         
         const msgTarget = currentUser.role === 'cookie-mom' ? 'boothMessages' : 'parentBoothsMessages';
@@ -3423,7 +3459,7 @@ async function editSignup(signupId) {
     } finally {
         hideLoading();
     }
-}
+};
 
 // Delete a signup
 async function deleteSignup(signupId) {
