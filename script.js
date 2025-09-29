@@ -3213,35 +3213,40 @@ function displayAvailableBooths() {
                     </div>
                     
                     <div style="background: #fff; padding: 15px; border: 1px solid #e9ecef; border-radius: 5px;">
-                        <strong>Sign Up:</strong>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-top: 10px; align-items: end;">
-                            <div>
-                                <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 5px;">Select Girl:</label>
-                                <select id="girlSelect${booth.id}" class="form-control" style="padding: 8px;">
-                                    <option value="">Choose...</option>
-                                    ${myGirls.map(girl => 
-                                        `<option value="${girl.id}">${girl.girlName}</option>`
-                                    ).join('')}
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 5px;">Select Role:</label>
-                                <select id="roleSelect${booth.id}" class="form-control" style="padding: 8px;">
-                                    <option value="">Choose...</option>
-                                    ${Object.keys(BOOTH_ROLES).map(roleKey => {
-                                        const role = BOOTH_ROLES[roleKey];
-                                        const currentCount = signupCounts[roleKey] || 0;
-                                        const isFull = currentCount >= role.maxCapacity;
-                                        return `<option value="${roleKey}" ${isFull ? 'disabled' : ''}>
-                                            ${role.icon} ${role.name} (${currentCount}/${role.maxCapacity})
-                                        </option>`;
-                                    }).join('')}
-                                </select>
-                            </div>
-                            <button class="btn" onclick="signupForBooth(${booth.id})" style="padding: 8px 20px;">
-                                Sign Up
-                            </button>
-                        </div>
+    <strong>Sign Up:</strong>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <div>
+            <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 5px;">Select Girl:</label>
+            <select id="girlSelect${booth.id}" class="form-control" style="padding: 8px;">
+                <option value="">Choose...</option>
+                ${myGirls.map(girl => 
+                    `<option value="${girl.id}">${girl.girlName}</option>`
+                ).join('')}
+            </select>
+        </div>
+        <div>
+            <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 5px;">Select Role:</label>
+            <select id="roleSelect${booth.id}" class="form-control" style="padding: 8px;">
+                <option value="">Choose...</option>
+                ${Object.keys(BOOTH_ROLES).map(roleKey => {
+                    const role = BOOTH_ROLES[roleKey];
+                    const currentCount = signupCounts[roleKey] || 0;
+                    const isFull = currentCount >= role.maxCapacity;
+                    return `<option value="${roleKey}" ${isFull ? 'disabled' : ''}>
+                        ${role.icon} ${role.name} (${currentCount}/${role.maxCapacity})
+                    </option>`;
+                }).join('')}
+            </select>
+        </div>
+    </div>
+    <div style="margin-top: 10px;">
+        <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 5px;">Notes (optional):</label>
+        <textarea id="notesSelect${booth.id}" class="form-control" style="width: 100%; padding: 8px; border-radius: 4px;" rows="2" placeholder="Any special notes about this signup..."></textarea>
+    </div>
+    <button class="btn" onclick="signupForBooth(${booth.id})" style="padding: 8px 20px; margin-top: 10px;">
+        Sign Up
+    </button>
+</div>
                     </div>
                 </div>
             `;
@@ -3262,39 +3267,101 @@ function displayMyBoothSignups() {
     }
     
     container.innerHTML = mySignups.map(signup => {
+        const booth = booths.find(b => b.id == signup.boothId);
+        const signupCounts = getBoothSignupCounts(signup.boothId);
         const role = BOOTH_ROLES[signup.role] || {name: signup.role, icon: '👤'};
+        
         return `
             <div class="signup-card" style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 10px; background: white;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <strong style="color: #2c3e50;">${signup.girlName} → ${signup.boothName}</strong><br>
-                        <small style="color: #666;">${signup.boothDate || 'Date TBD'}</small><br>
-                        <small style="color: #666;">Role: ${role.icon} ${role.name}</small><br>
-                        <small style="color: #999;">Signed up: ${signup.signedAt}</small>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn" style="background: #007bff; padding: 6px 12px; font-size: 0.8rem;" 
-                                onclick="editSignup(${signup.id})">
-                            Edit
-                        </button>
-                        <button class="btn" style="background: #dc3545; padding: 6px 12px; font-size: 0.8rem;" 
-                                onclick="deleteSignup(${signup.id})">
-                            Delete
-                        </button>
-                    </div>
+                <div style="margin-bottom: 10px;">
+                    <strong style="color: #2c3e50;">${signup.girlName} → ${signup.boothName}</strong><br>
+                    <small style="color: #666;">${signup.boothDate || 'Date TBD'}</small><br>
+                    <small style="color: #999;">Signed up: ${signup.signedAt}</small>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; margin-bottom: 10px;">
+                    <label style="font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 8px;">Role:</label>
+                    <select id="roleEdit${signup.id}" class="form-control" style="padding: 8px;">
+                        ${Object.keys(BOOTH_ROLES).map(roleKey => {
+                            const r = BOOTH_ROLES[roleKey];
+                            const count = signupCounts[roleKey] || 0;
+                            const available = count < r.maxCapacity || roleKey === signup.role;
+                            const isCurrentRole = roleKey === signup.role;
+                            
+                            if (!available) return '';
+                            
+                            return `<option value="${roleKey}" ${isCurrentRole ? 'selected' : ''}>
+                                ${r.icon} ${r.name} (${count}/${r.maxCapacity})
+                            </option>`;
+                        }).filter(Boolean).join('')}
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 5px;">Notes (optional):</label>
+                    <textarea id="notesEdit${signup.id}" class="form-control" style="width: 100%; padding: 8px; border-radius: 4px; resize: vertical;" rows="2" placeholder="Add any special notes...">${signup.notes || ''}</textarea>
+                </div>
+                
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" style="background: #28a745; padding: 6px 12px; font-size: 0.8rem;" 
+                            onclick="saveSignupChanges(${signup.id})">
+                        Save Changes
+                    </button>
+                    <button class="btn" style="background: #dc3545; padding: 6px 12px; font-size: 0.8rem;" 
+                            onclick="deleteSignup(${signup.id})">
+                        Delete Signup
+                    </button>
                 </div>
             </div>
         `;
     }).join('');
 }
 
+// Save changes from the inline editor
+async function saveSignupChanges(signupId) {
+    const signup = boothSignups.find(s => s.id == signupId);
+    if (!signup) return;
+    
+    const newRole = document.getElementById(`roleEdit${signupId}`).value;
+    const newNotes = document.getElementById(`notesEdit${signupId}`).value.trim();
+    
+    // Check if anything actually changed
+    if (newRole === signup.role && newNotes === (signup.notes || '')) {
+        const msgTarget = currentUser.role === 'cookie-mom' ? 'boothMessages' : 'parentBoothsMessages';
+        showMessage(msgTarget, 'No changes made.');
+        return;
+    }
+    
+    showLoading('Saving changes...');
+    
+    try {
+        signup.role = newRole;
+        signup.notes = newNotes;
+        signup.lastModified = new Date().toLocaleString();
+        
+        await updateBoothSignupInSheets(signup);
+        refreshAllBoothDisplays();
+        
+        const msgTarget = currentUser.role === 'cookie-mom' ? 'boothMessages' : 'parentBoothsMessages';
+        showMessage(msgTarget, 'Signup updated successfully!');
+    } catch (error) {
+        console.error('Save error:', error);
+        const msgTarget = currentUser.role === 'cookie-mom' ? 'boothMessages' : 'parentBoothsMessages';
+        showMessage(msgTarget, 'Error saving changes. Please try again.', true);
+    } finally {
+        hideLoading();
+    }
+}
+
 // Sign up for a booth
 async function signupForBooth(boothId) {
     const roleSelect = document.getElementById(`roleSelect${boothId}`);
     const girlSelect = document.getElementById(`girlSelect${boothId}`);
+    const notesInput = document.getElementById(`notesSelect${boothId}`);
     
     const roleKey = roleSelect ? roleSelect.value : '';
     const girlId = girlSelect ? girlSelect.value : '';
+    const notes = notesInput ? notesInput.value.trim() : '';
     
     if (!girlId) {
         showMessage('parentBoothsMessages', 'Please select a girl first.', true);
@@ -3343,7 +3410,8 @@ async function signupForBooth(boothId) {
         parentName: currentUser.name,
         role: roleKey,
         status: 'confirmed',
-        signedAt: new Date().toLocaleString()
+        signedAt: new Date().toLocaleString(),
+        notes: notes  // Add notes here
     };
     
     boothSignups.push(signup);
@@ -3370,96 +3438,7 @@ async function signupForBooth(boothId) {
     }
 }
 
-// Edit an existing signup
-async function editSignup(signupId) {
-    const signup = boothSignups.find(s => s.id == signupId);
-    if (!signup) return;
-    
-    const booth = booths.find(b => b.id == signup.boothId);
-    const signupCounts = getBoothSignupCounts(booth.id);
-    
-    // Build dropdown options for available roles
-    const roleOptionsHtml = Object.keys(BOOTH_ROLES)
-        .map(key => {
-            const role = BOOTH_ROLES[key];
-            const count = signupCounts[key] || 0;
-            const available = count < role.maxCapacity || key === signup.role;
-            const isCurrentRole = key === signup.role;
-            
-            if (!available) return '';
-            
-            return `<option value="${key}" ${isCurrentRole ? 'selected' : ''}>
-                ${role.icon} ${role.name} (${count}/${role.maxCapacity})
-            </option>`;
-        })
-        .filter(Boolean)
-        .join('');
-    
-    // Create modal with dropdown
-    const modalContent = `
-        <div style="max-width: 400px;">
-            <h3>Edit Booth Signup</h3>
-            <p><strong>Girl:</strong> ${signup.girlName}</p>
-            <p><strong>Booth:</strong> ${signup.boothName}</p>
-            <p><strong>Date:</strong> ${signup.boothDate}</p>
-            <br>
-            
-            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Select New Role:</label>
-            <select id="editRoleSelect" class="form-control" style="width: 100%; padding: 10px; margin-bottom: 20px;">
-                ${roleOptionsHtml}
-            </select>
-            
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button onclick="closeEditModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                    Cancel
-                </button>
-                <button onclick="saveEditedRole(${signupId})" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                    Save Changes
-                </button>
-            </div>
-        </div>
-    `;
-    
-    showModal('Edit Booth Signup', modalContent);
-}
 
-// Helper to close edit modal
-window.closeEditModal = function() {
-    closeApprovalModal(); // Reuse existing modal close function
-};
-
-// Save the edited role
-window.saveEditedRole = async function(signupId) {
-    const newRole = document.getElementById('editRoleSelect').value;
-    if (!newRole) return;
-    
-    const signup = boothSignups.find(s => s.id == signupId);
-    if (!signup || newRole === signup.role) {
-        closeEditModal();
-        return;
-    }
-    
-    showLoading('Updating signup...');
-    
-    try {
-        signup.role = newRole;
-        signup.lastModified = new Date().toLocaleString();
-        
-        await updateBoothSignupInSheets(signup);
-        
-        closeEditModal();
-        refreshAllBoothDisplays();
-        
-        const msgTarget = currentUser.role === 'cookie-mom' ? 'boothMessages' : 'parentBoothsMessages';
-        showMessage(msgTarget, 'Signup updated!');
-    } catch (error) {
-        console.error('Edit error:', error);
-        const msgTarget = currentUser.role === 'cookie-mom' ? 'boothMessages' : 'parentBoothsMessages';
-        showMessage(msgTarget, 'Error updating signup. Please try again.', true);
-    } finally {
-        hideLoading();
-    }
-};
 
 // Delete a signup
 async function deleteSignup(signupId) {
